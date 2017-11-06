@@ -24,7 +24,7 @@ class basePager
      *
      * @public int
      */
-    const DEFAULT_REC_PER_PAGE = 20;
+    const DEFAULT_REC_PER_PAGE = 100;
 
     /**
      * 总个数。
