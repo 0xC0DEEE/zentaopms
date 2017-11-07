@@ -124,7 +124,7 @@ class basePager
      * @access public
      * @return void
      */
-    public function __construct($recTotal = 0, $recPerPage = 20, $pageID = 1)
+    public function __construct($recTotal = 0, $recPerPage = 100, $pageID = 1)
     {
         $this->setApp();
         $this->setLang();
@@ -147,7 +147,7 @@ class basePager
      * @access public
      * @return object
      */
-    public static function init($recTotal = 0, $recPerPage = 20, $pageID = 1)
+    public static function init($recTotal = 0, $recPerPage = 100, $pageID = 1)
     {
         return new pager($recTotal, $recPerPage, $pageID);
     }
