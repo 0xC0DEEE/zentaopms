@@ -1,6 +1,6 @@
 <?php 
 
-echo $helloworld;
+echo (strcmp($this->app->user->account , 'liyuhang') !== 0);
 
 ?>
 

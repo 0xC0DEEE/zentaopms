@@ -25,7 +25,6 @@ class taskModel extends model
         $tasksID   = array();
         $taskFiles = array();
         $this->loadModel('file');
-        
         $task = fixer::input('post')
             ->add('project', (int)$projectID)
             ->setDefault('estimate, left, story', 0)
@@ -61,14 +60,6 @@ class taskModel extends model
             }
 
             $task = $this->file->processImgURL($task, $this->config->task->editor->create['id'], $this->post->uid);
-            //
-            if($assignedTo == 'liyuhang'){ // and (strcmp($this->app->user->account , 'liyuhang') != 0) ){
-                if(stripos($task->name, "::DO::") === false){
-                    $task->assignedTo = $this->app->user->account;
-                    $task->openedBy = 'liyuhang';
-                }   
-            }
-            
             $this->dao->insert(TABLE_TASK)->data($task)
                 ->autoCheck()
                 ->batchCheck($this->config->task->create->requiredFields, 'notempty')
