@@ -14,6 +14,15 @@
 <?php include '../../common/view/kindeditor.html.php';?>
 <?php include '../../common/view/datepicker.html.php';?>
 <?php js::set('confirmFinish', $lang->task->confirmFinish);?>
+<?php if(!empty($task->team) && array_keys($task->team)[0] != $this->app->user->account):?>
+  <div class="alert with-icon">
+    <i class="icon-info-sign"></i>
+    <div class="content">
+      <p><?php echo $lang->task->deniedNotice;?></p>
+    </div>
+  </div>
+    <?php exit;?>
+<?php endif;?>
 <div id='titlebar'>
   <div class='heading'>
     <span class='prefix'><?php echo html::icon($lang->icons['task']);?> <strong><?php echo $task->id;?></strong></span>

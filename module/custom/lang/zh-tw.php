@@ -1,18 +1,22 @@
 <?php
-$lang->custom->common    = '自定義';
-$lang->custom->index     = '首頁';
-$lang->custom->set       = '自定義配置';
-$lang->custom->restore   = '恢復預設';
-$lang->custom->key       = '鍵';
-$lang->custom->value     = '值';
-$lang->custom->flow      = '流程';
-$lang->custom->working   = '工作方式';
-$lang->custom->select    = '請選擇流程：';
-$lang->custom->branch    = '多分支';
-$lang->custom->owner     = '所有者';
-$lang->custom->module    = '模組';
-$lang->custom->section   = '附加部分';
-$lang->custom->lang      = '所屬語言';
+$lang->custom->common     = '自定義';
+$lang->custom->index      = '首頁';
+$lang->custom->set        = '自定義配置';
+$lang->custom->restore    = '恢復預設';
+$lang->custom->key        = '鍵';
+$lang->custom->value      = '值';
+$lang->custom->flow       = '流程';
+$lang->custom->working    = '工作方式';
+$lang->custom->select     = '請選擇流程：';
+$lang->custom->branch     = '多分支';
+$lang->custom->owner      = '所有者';
+$lang->custom->module     = '模組';
+$lang->custom->section    = '附加部分';
+$lang->custom->lang       = '所屬語言';
+$lang->custom->setPublic  = '設為公共';
+$lang->custom->required   = '必填項';
+$lang->custom->score      = '積分';
+$lang->custom->scoreReset = '重置積分';
 
 $lang->custom->object['story']    = '需求';
 $lang->custom->object['task']     = '任務';
@@ -119,3 +123,10 @@ $lang->custom->workingList['onlyTask']  = '任務管理工具';
 
 $lang->custom->menuTip  = '點擊顯示或隱藏導航條目，拖拽來更改顯示順序。';
 $lang->custom->saveFail = '保存失敗！';
+
+$lang->custom->scoreList[0] = '關閉';
+$lang->custom->scoreList[1] = '開啟';
+
+$lang->custom->moduleName['product']     = $lang->productCommon;
+$lang->custom->moduleName['productplan'] = '計劃';
+$lang->custom->moduleName['project']     = $lang->projectCommon;

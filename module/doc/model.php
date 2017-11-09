@@ -414,12 +414,11 @@ class docModel extends model
         $docContent->type    = $doc->contentType;
         $docContent->version = 1;
         if($doc->contentType == 'markdown') $docContent->content = str_replace('&gt;', '>', $docContent->content);
-        unset($doc->content);
         unset($doc->contentMarkdown);
         unset($doc->contentType);
         unset($doc->url);
 
-        $this->dao->insert(TABLE_DOC)->data($doc)->autoCheck()
+        $this->dao->insert(TABLE_DOC)->data($doc, 'content')->autoCheck()
             ->batchCheck($this->config->doc->create->requiredFields, 'notempty')
             ->exec();
         if(!dao::isError())
@@ -431,6 +430,7 @@ class docModel extends model
             $docContent->doc   = $docID;
             $docContent->files = join(',', array_keys($files));
             $this->dao->insert(TABLE_DOCCONTENT)->data($docContent)->exec();
+            $this->loadModel('score')->create('doc', 'create', $docID);
             return array('status' => 'new', 'id' => $docID);
         }
         return false;
@@ -457,8 +457,17 @@ class docModel extends model
             ->remove('comment,files,labels,uid')
             ->get();
         if($doc->acl == 'private') $doc->users = $oldDoc->addedBy;
+
         $oldDocContent = $this->dao->select('files,type')->from(TABLE_DOCCONTENT)->where('doc')->eq($docID)->andWhere('version')->eq($oldDoc->version)->fetch();
-        if($oldDocContent->type == 'markdown') $doc->content = str_replace('&gt;', '>', $doc->content);
+        if($oldDocContent)
+        {
+            $oldDoc->title       = $oldDocContent->title;
+            $oldDoc->digest      = $oldDocContent->digest;
+            $oldDoc->content     = $oldDocContent->content;
+            $oldDoc->contentType = $oldDocContent->type;
+
+            if($oldDocContent->type == 'markdown') $doc->content = str_replace('&gt;', '>', $doc->content);
+        }
 
         $lib = $this->getLibByID($doc->lib);
         $doc = $this->loadModel('file')->processImgURL($doc, $this->config->doc->editor->edit['id'], $this->post->uid);
@@ -484,17 +493,16 @@ class docModel extends model
             $docContent->title   = $doc->title;
             $docContent->content = $doc->content;
             $docContent->version = $doc->version;
-            $docContent->digest  = $doc->digest;
             $docContent->type    = $oldDocContent->type;
             $docContent->files   = $oldDocContent->files;
+            if(isset($doc->digest)) $docContent->digest  = $doc->digest;
             if($files) $docContent->files .= ',' . join(',', array_keys($files));
             $docContent->files   = trim($docContent->files, ',');
             $this->dao->insert(TABLE_DOCCONTENT)->data($docContent)->exec();
         }
-        unset($doc->content);
         unset($doc->contentType);
 
-        $this->dao->update(TABLE_DOC)->data($doc)
+        $this->dao->update(TABLE_DOC)->data($doc, 'content')
             ->autoCheck()
             ->batchCheck($this->config->doc->edit->requiredFields, 'notempty')
             ->where('id')->eq((int)$docID)
@@ -610,6 +618,8 @@ class docModel extends model
      */
     public function checkPriv($object, $type = 'lib')
     {
+        if($this->app->user->admin) return true;
+
         $acls = $this->app->user->rights['acls'];
         if(!empty($object->product) and !empty($acls['products']) and !in_array($object->product, $acls['products'])) return false;
         if(!empty($object->project) and !empty($acls['projects']) and !in_array($object->project, $acls['projects'])) return false;
@@ -618,7 +628,6 @@ class docModel extends model
 
         $account = ',' . $this->app->user->account . ',';
         if(isset($object->addedBy) and $object->addedBy == $this->app->user->account) return true;
-        if($this->app->user->admin) return true;
         if($object->acl == 'private' and strpos(",$object->users,", $account) !== false) return true;
         if($object->acl == 'custom')
         {

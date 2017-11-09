@@ -70,6 +70,10 @@
             <td><?php echo $product->code;?></td>
           </tr>
           <tr>
+            <th><?php echo $lang->product->line;?></th>
+            <td><?php echo zget($lines, $product->line);?></td>
+          </tr>
+          <tr>
             <th><?php echo $lang->product->PO;?></th>
             <td><?php echo zget($users, $product->PO);?></td>
           </tr>

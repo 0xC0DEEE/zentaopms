@@ -500,7 +500,10 @@ class testcase extends control
             $this->view->branchName  = $this->session->currentProductType == 'normal' ? '' : $this->loadModel('branch')->getById($case->branch);
         }
 
-        $caseFails = $this->dao->select('`case` AS name, COUNT(*) AS value')->from(TABLE_TESTRESULT)->where('caseResult')->eq('fail')->andwhere('`case`')->eq($caseID)->groupBy('name')->orderBy('value DESC')->fetchAll('name');
+        $caseFails = $this->dao->select('COUNT(*) AS count')->from(TABLE_TESTRESULT)->where('caseResult')->eq('fail')->andwhere('`case`')->eq($caseID)
+            ->beginIF($from == 'testtask')->andwhere('`run`')->eq($taskID)->fi()
+            ->fetch('count');
+        $case->caseFails = $caseFails;
 
         $this->view->position[] = $this->lang->testcase->common;
         $this->view->position[] = $this->lang->testcase->view;
@@ -515,7 +518,7 @@ class testcase extends control
         $this->view->preAndNext = $this->loadModel('common')->getPreAndNextObject('testcase', $caseID);
         $this->view->runID      = $from == 'testcase' ? 0 : $run->id;
         $this->view->isLibCase  = $isLibCase;
-        $this->view->caseFails  = $caseFails ? $caseFails : 0;
+        $this->view->caseFails  = $caseFails;
 
         $this->display();
     }
@@ -648,6 +651,7 @@ class testcase extends control
         }
 
         $caseIDList = $this->post->caseIDList ? $this->post->caseIDList : die(js::locate($this->session->caseList));
+        $caseIDList = array_unique($caseIDList);
 
         /* Get the edited cases. */
         $cases = $this->testcase->getByList($caseIDList);
@@ -776,6 +780,7 @@ class testcase extends control
     public function batchReview($result)
     {
         $caseIdList = $this->post->caseIDList ? $this->post->caseIDList : die(js::locate($this->session->caseList, 'parent'));
+        $caseIDList = array_unique($caseIDList);
         $actions    = $this->testcase->batchReview($caseIdList, $result);
 
         if(dao::isError()) die(js::error(dao::getError()));
@@ -829,6 +834,7 @@ class testcase extends control
     public function batchDelete($productID = 0)
     {
         $caseIDList = $this->post->caseIDList ? $this->post->caseIDList : die(js::locate($this->session->caseList));
+        $caseIDList = array_unique($caseIDList);
 
         foreach($caseIDList as $caseID) $this->testcase->delete(TABLE_CASE, $caseID);
         die(js::locate($this->session->caseList));
@@ -846,6 +852,7 @@ class testcase extends control
         if($this->post->caseIDList)
         {
             $caseIDList = $this->post->caseIDList;
+            $caseIDList = array_unique($caseIDList);
             unset($_POST['caseIDList']);
             $allChanges = $this->testcase->batchChangeModule($caseIDList, $moduleID);
             if(dao::isError()) die(js::error(dao::getError()));
@@ -870,6 +877,7 @@ class testcase extends control
     public function batchCaseTypeChange($result)
     {
         $caseIdList = $this->post->caseIDList ? $this->post->caseIDList : die(js::locate($this->session->caseList, 'parent'));
+        $caseIDList = array_unique($caseIDList);
         $this->testcase->batchCaseTypeChange($caseIdList, $result);
 
         if(dao::isError()) die(js::error(dao::getError()));
@@ -1001,6 +1009,7 @@ class testcase extends control
     public function batchConfirmStoryChange($productID = 0)
     {
         $caseIDList = $this->post->caseIDList ? $this->post->caseIDList : die(js::locate($this->session->caseList));
+        $caseIDList = array_unique($caseIDList);
 
         foreach($caseIDList as $caseID) $this->confirmStoryChange($caseID,false);
         die(js::locate($this->session->caseList));
@@ -1461,7 +1470,7 @@ class testcase extends control
                 }
                 else
                 {
-                    $steps = $cellValue;
+                    $steps = (array)$cellValue;
                     if(strpos($cellValue, "\n"))
                     {
                         $steps = explode("\n", $cellValue);

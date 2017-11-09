@@ -164,6 +164,7 @@ class commonModel extends model
             if($module == 'tutorial') return true;
             if($module == 'block') return true;
             if($module == 'product' and $method == 'showerrornone') return true;
+            if($module == 'score' and $method == 'browse') return true;
         }
         return false;
     }
@@ -817,7 +818,7 @@ class commonModel extends model
             if(strtolower($key) == 'closeddate'   && $value == '')  continue;
 
             if($magicQuote) $value = stripslashes($value);
-            if($value != stripslashes($old->$key))
+            if(isset($old->$key) and $value != stripslashes($old->$key))
             { 
                 $diff = '';
                 if(substr_count($value, "\n") > 1     or 
@@ -1131,7 +1132,6 @@ class commonModel extends model
 
         /* Check is the super admin or not. */
         if(!empty($app->user->admin)) return true;
-
         /* If not super admin, check the rights. */
         $rights  = $app->user->rights['rights'];
         $acls    = $app->user->rights['acls'];
@@ -1162,6 +1162,8 @@ class commonModel extends model
         global $app;
 
         if(!empty($app->user->admin)) return true;
+        if($module == 'todo' and ($method == 'create' or $method == 'batchcreate')) return true;
+        if($module == 'effort' and $method == 'batchcreate') return true;
 
         // limited project
         $limitedProject = false;
@@ -1350,6 +1352,83 @@ class commonModel extends model
         foreach($items as $item) $convertedItems[$item] = zget($allConverted, $item, null);
 
         return $convertedItems;
+    }
+
+    /**
+     * Check an entry. 
+     * 
+     * @access public
+     * @return void
+     */
+    public function checkEntry()
+    {
+        if($this->session->valid_entry)
+        {
+            if(!$this->session->entry_code) $this->response(341);
+            if($this->session->valid_entry != md5(md5($this->get->code) . $this->server->remote_addr)) $this->response(342);
+            return true;
+        }
+
+        if(!$this->get->code)  $this->response(301);
+        if(!$this->get->token) $this->response(302);
+
+        $entry = $this->loadModel('entry')->getByCode($this->get->code);
+        if(!$entry)      $this->response(311);
+        if(!$entry->key) $this->response(312);
+
+        $this->checkEntryIP($entry->ip);
+        $this->checkEntryToken($entry->key);
+
+        $this->session->set('ENTRY_CODE', $this->get->code);
+        $this->session->set('VALID_ENTRY', md5(md5($this->get->code) . $this->server->remote_addr));
+        $this->loadModel('entry')->saveLog($entry->id, $this->server->request_uri);
+    }
+
+    /**
+     * Check ip of an entry. 
+     * 
+     * @param  string $ip 
+     * @access public
+     * @return void
+     */
+    public function checkEntryIP($ip)
+    {
+        $ipWhiteList = $this->config->ipWhiteList;
+        $this->config->ipWhiteList = $ip;
+        $result = $this->checkIP();
+        $this->config->ipWhiteList = $ipWhiteList;
+        if(!$result) $this->response(321);
+    }
+
+    /**
+     * Check token of an entry. 
+     * 
+     * @param  string $key 
+     * @access public
+     * @return void
+     */
+    public function checkEntryToken($key)
+    {
+        parse_str($this->server->query_String, $queryString);
+        unset($queryString['token']);
+        $queryString = http_build_query($queryString);
+        if($_GET['token'] != md5(md5($queryString) . $key)) $this->response(331);
+    }
+
+    /**
+     * Response. 
+     * 
+     * @param  int    $code 
+     * @access public
+     * @return void
+     */
+    public function response($code)
+    {
+        $response = new stdclass();
+        $response->errcode = $code;
+        $response->errmsg  = $this->lang->error->entry[$code];
+
+        die(helper::jsonEncode($response));
     }
 }
 

@@ -187,6 +187,9 @@ class upgradeModel extends model
                 $this->adjustPriv9_4();
             case '9_5':
                 $this->execSQL($this->getUpgradeFile('9.5'));
+            case '9_5_1':
+                $this->execSQL($this->getUpgradeFile('9.5.1'));
+                $this->initProjectStoryOrder();
         }
 
         $this->deletePatch();
@@ -284,6 +287,7 @@ class upgradeModel extends model
         case '9_3_beta':  $confirmContent .= file_get_contents($this->getUpgradeFile('9.3.beta'));
         case '9_4':       $confirmContent .= file_get_contents($this->getUpgradeFile('9.4'));
         case '9_5':       $confirmContent .= file_get_contents($this->getUpgradeFile('9.5'));
+        case '9_5_1':     $confirmContent .= file_get_contents($this->getUpgradeFile('9.5.1'));
         }
         return str_replace('zt_', $this->config->db->prefix, $confirmContent);
     }
@@ -1721,6 +1725,7 @@ class upgradeModel extends model
             $data->module = 'bug';
             $data->method = 'batchActivate';
         }
+        return true;
     }
 
     /**
@@ -1791,5 +1796,30 @@ class upgradeModel extends model
         }
 
         return !dao::isError();
+    }
+
+    /**
+     * Init project story order.
+     * 
+     * @access public
+     * @return bool
+     */
+    public function initProjectStoryOrder()
+    {
+        $storyGroup = $this->dao->select('t1.*')->from(TABLE_PROJECTSTORY)->alias('t1')
+            ->leftJoin(TABLE_STORY)->alias('t2')->on('t1.story=t2.id')
+            ->orderBy('t2.pri_desc,t1.story_asc')
+            ->fetchGroup('project', 'story');
+
+        foreach($storyGroup as $projectID => $stories)
+        {
+            $order = 1;
+            foreach($stories as $storyID => $projectStory)
+            {
+                $this->dao->update(TABLE_PROJECTSTORY)->set('`order`')->eq($order)->where('project')->eq($projectID)->andWhere('story')->eq($storyID)->exec();
+                $order++;
+            }
+        }
+        return true;
     }
 }

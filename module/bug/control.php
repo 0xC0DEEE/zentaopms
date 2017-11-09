@@ -121,6 +121,16 @@ class bug extends control
         /* Process the openedBuild and resolvedBuild fields. */
         $bugs = $this->bug->processBuildForBugs($bugs);
 
+        /* Get story and task id list. */
+        $storyIdList = $taskIdList = array();
+        foreach($bugs as $bug)
+        {
+            if($bug->story) $storyIdList[$bug->story] = $bug->story;
+            if($bug->task)  $taskIdList[$bug->task]   = $bug->task;
+        }
+        $storyList = $storyIdList ? $this->loadModel('story')->getByList($storyIdList) : array();
+        $taskList  = $taskIdList  ? $this->loadModel('task')->getByList($taskIdList)   : array();
+
         /* Build the search form. */
         $actionURL = $this->createLink('bug', 'browse', "productID=$productID&branch=$branch&browseType=bySearch&queryID=myQueryID");
         $this->config->bug->search['onMenuBar'] = 'yes';
@@ -150,6 +160,10 @@ class bug extends control
         $this->view->memberPairs   = $this->user->getPairs('noletter|nodeleted');
         $this->view->branch        = $branch;
         $this->view->branches      = $this->loadModel('branch')->getPairs($productID);
+        $this->view->projects      = $projects;
+        $this->view->plans         = $this->loadModel('productplan')->getPairs($productID);
+        $this->view->stories       = $storyList;
+        $this->view->tasks         = $taskList;
         $this->view->setShowModule = true;
 
         $this->display();
@@ -629,6 +643,7 @@ class bug extends control
         }
 
         $bugIDList = $this->post->bugIDList ? $this->post->bugIDList : die(js::locate($this->session->bugList, 'parent'));
+        $bugIDList = array_unique($bugIDList);
         /* Initialize vars.*/
         $bugs = $this->dao->select('*')->from(TABLE_BUG)->where('id')->in($bugIDList)->fetchAll('id');
 
@@ -762,6 +777,7 @@ class bug extends control
         if($this->post->bugIDList)
         {
             $bugIDList = $this->post->bugIDList;
+            $bugIDList = array_unique($bugIDList);
             unset($_POST['bugIDList']);
             $allChanges = $this->bug->batchChangeModule($bugIDList, $moduleID);
             if(dao::isError()) die(js::error(dao::getError()));
@@ -773,6 +789,7 @@ class bug extends control
                 $this->bug->sendmail($bugID, $actionID);
             }
         }
+        $this->loadModel('score')->create('ajax', 'batchOther');
         die(js::locate($this->session->bugList, 'parent'));
     }
 
@@ -788,6 +805,7 @@ class bug extends control
         if(!empty($_POST) && isset($_POST['bugIDList']))
         {
             $bugIDList = $this->post->bugIDList;
+            $bugIDList = array_unique($bugIDList);
             unset($_POST['bugIDList']);
             foreach($bugIDList as $bugID)
             {
@@ -798,6 +816,7 @@ class bug extends control
                 $this->action->logHistory($actionID, $changes);
                 $this->bug->sendmail($bugID, $actionID);
             }
+            $this->loadModel('score')->create('ajax', 'batchOther');
         }
         if($type == 'product') die(js::locate($this->createLink('bug', 'browse', "productID=$projectID")));
         if($type == 'my')      die(js::locate($this->createLink('my', 'bug')));
@@ -846,7 +865,8 @@ class bug extends control
      */
     public function batchConfirm()
     {
-        $bugIDList  = $this->post->bugIDList ? $this->post->bugIDList : die(js::locate($this->session->bugList, 'parent'));
+        $bugIDList = $this->post->bugIDList ? $this->post->bugIDList : die(js::locate($this->session->bugList, 'parent'));
+        $bugIDList = array_unique($bugIDList);
         $this->bug->batchConfirm($bugIDList);
         if(dao::isError()) die(js::error(dao::getError()));
         foreach($bugIDList as $bugID)
@@ -854,6 +874,7 @@ class bug extends control
             $actionID = $this->action->create('bug', $bugID, 'bugConfirmed');
             $this->bug->sendmail($bugID, $actionID);
         }
+        $this->loadModel('score')->create('ajax', 'batchOther');
         die(js::locate($this->session->bugList, 'parent'));
     }
     
@@ -926,6 +947,7 @@ class bug extends control
     public function batchResolve($resolution, $resolvedBuild = '')
     {
         $bugIDList = $this->post->bugIDList ? $this->post->bugIDList : die(js::locate($this->session->bugList, 'parent'));
+        $bugIDList = array_unique($bugIDList);
         $bugIDList = $this->bug->batchResolve($bugIDList, $resolution, $resolvedBuild);
         if(dao::isError()) die(js::error(dao::getError()));
         foreach($bugIDList as $bugID)
@@ -933,6 +955,7 @@ class bug extends control
             $actionID = $this->action->create('bug', $bugID, 'Resolved', '', $resolution);
             $this->bug->sendmail($bugID, $actionID);
         }
+        $this->loadModel('score')->create('ajax', 'batchOther');
         die(js::locate($this->session->bugList, 'parent'));
     }
 
@@ -1102,6 +1125,7 @@ class bug extends control
         if($this->post->bugIDList)
         {
             $bugIDList = $this->post->bugIDList;
+            $bugIDList = array_unique($bugIDList);
 
             /* Reset $_POST. Do not unset that because the function of close need that in model. */
             $_POST = array();
@@ -1120,7 +1144,7 @@ class bug extends control
                 $actionID = $this->action->create('bug', $bugID, 'Closed');
                 $this->bug->sendmail($bugID, $actionID);
             }
-
+            $this->loadModel('score')->create('ajax', 'batchOther');
             if(isset($skipBugs)) echo js::alert(sprintf($this->lang->bug->skipClose, join(',', $skipBugs)));
         }
         die(js::reload('parent'));
@@ -1142,11 +1166,12 @@ class bug extends control
                 $actionID = $this->action->create('bug', $bugID, 'Activated', $bug['comment']);
                 $this->bug->sendmail($bugID, $actionID);
             }
-
+            $this->loadModel('score')->create('ajax', 'batchOther');
             die(js::locate($this->session->bugList, 'parent'));
         }
 
         $bugIDList = $this->post->bugIDList ? $this->post->bugIDList : die(js::locate($this->session->bugList, 'parent'));
+        $bugIDList = array_unique($bugIDList);
         $bugs = $this->dao->select('id, title, status, resolvedBy, openedBuild')->from(TABLE_BUG)->where('id')->in($bugIDList)->fetchAll('id');
 
         $this->bug->setMenu($this->products, $productID, $branch);

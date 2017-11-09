@@ -53,12 +53,14 @@ class actionModel extends model
         /* Get product and project for this object. */
         $productAndProject  = $this->getProductAndProject($action->objectType, $objectID);
         $action->product    = $productAndProject['product'];
-        $action->project    = $productAndProject['project'];
+        $action->project    = (int)$productAndProject['project'];
 
         $this->dao->insert(TABLE_ACTION)->data($action)->autoCheck()->exec();
         $actionID = $this->dbh->lastInsertID();
 
         $this->file->updateObjectID($this->post->uid, $objectID, $objectType);
+
+        $this->loadModel('webhook')->send($objectType, $objectID, $actionType, $actionID);
 
         return $actionID;
     }

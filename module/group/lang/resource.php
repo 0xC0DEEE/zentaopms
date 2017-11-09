@@ -85,6 +85,7 @@ $lang->resource->my->unbind         = 'unbind';
 $lang->resource->my->manageContacts = 'manageContacts';
 $lang->resource->my->deleteContacts = 'deleteContacts';
 $lang->resource->my->limited        = 'limited';
+$lang->resource->my->score          = 'score';
 
 $lang->my->methodOrder[0]  = 'index';
 $lang->my->methodOrder[5]  = 'todo';
@@ -101,7 +102,8 @@ $lang->my->methodOrder[55] = 'changePassword';
 $lang->my->methodOrder[60] = 'unbind';
 $lang->my->methodOrder[65] = 'manageContacts';
 $lang->my->methodOrder[75] = 'deleteContacts';
-$lang->my->methodOrder[80] = 'limited';
+$lang->my->methodOrder[80] = 'score';
+$lang->my->methodOrder[85] = 'limited';
 
 /* Todo. */
 $lang->resource->todo = new stdclass();
@@ -142,6 +144,7 @@ $lang->resource->product->close       = 'close';
 $lang->resource->product->updateOrder = 'updateOrder';
 $lang->resource->product->all         = 'all';
 $lang->resource->product->build       = 'build';
+$lang->resource->product->export      = 'export';
 
 $lang->product->methodOrder[0]  = 'index';
 $lang->product->methodOrder[5]  = 'browse';
@@ -158,6 +161,7 @@ $lang->product->methodOrder[60] = 'close';
 $lang->product->methodOrder[65] = 'updateOrder';
 $lang->product->methodOrder[70] = 'all';
 $lang->product->methodOrder[75] = 'build';
+$lang->product->methodOrder[80] = 'export';
 
 /* Branch. */
 $lang->resource->branch = new stdclass();
@@ -321,6 +325,11 @@ $lang->resource->project->kanban           = 'kanban';
 $lang->resource->project->printKanban      = 'printKanban';
 $lang->resource->project->tree             = 'tree';
 $lang->resource->project->all              = 'all';
+$lang->resource->project->kanbanHideCols   = 'kanbanHideCols';
+$lang->resource->project->kanbanColsColor  = 'kanbanColsColor';
+$lang->resource->project->export           = 'export';
+$lang->resource->project->storyKanban      = 'storyKanban';
+$lang->resource->project->storySort        = 'storySort';
 
 $lang->project->methodOrder[0]   = 'index';
 $lang->project->methodOrder[5]   = 'view';
@@ -360,6 +369,11 @@ $lang->project->methodOrder[175] = 'kanban';
 $lang->project->methodOrder[180] = 'printKanban';
 $lang->project->methodOrder[185] = 'tree';
 $lang->project->methodOrder[190] = 'all';
+$lang->project->methodOrder[195] = 'kanbanHideCols';
+$lang->project->methodOrder[200] = 'kanbanColsColor';
+$lang->project->methodOrder[205] = 'export';
+$lang->project->methodOrder[210] = 'storyKanban';
+$lang->project->methodOrder[215] = 'storySort';
 
 /* Task. */
 $lang->resource->task = new stdclass();
@@ -714,17 +728,24 @@ $lang->mail->methodOrder[60] = 'sendcloudUser';
 
 /* custom. */
 $lang->resource->custom = new stdclass();
-$lang->resource->custom->index   = 'index';
-$lang->resource->custom->set     = 'set';
-$lang->resource->custom->restore = 'restore';
-$lang->resource->custom->flow    = 'flow';
-$lang->resource->custom->working = 'working';
+$lang->resource->custom->index     = 'index';
+$lang->resource->custom->set       = 'set';
+$lang->resource->custom->restore   = 'restore';
+$lang->resource->custom->flow      = 'flow';
+$lang->resource->custom->working   = 'working';
+$lang->resource->custom->setPublic = 'setPublic';
 
 $lang->custom->methodOrder[5]  = 'index';
 $lang->custom->methodOrder[10] = 'set';
 $lang->custom->methodOrder[15] = 'restore';
 $lang->custom->methodOrder[20] = 'flow';
 $lang->custom->methodOrder[25] = 'working';
+$lang->custom->methodOrder[30] = 'setPublic';
+
+$lang->resource->datatable = new stdclass();
+$lang->resource->datatable->setGlobal = 'setGlobal';
+
+$lang->datatable->methodOrder[5]  = 'setGlobal';
 
 /* Subversion. */
 $lang->resource->svn = new stdclass();
@@ -1326,6 +1347,13 @@ $lang->changelog['9.2'][] = 'testsuite-exportTemplet';
 $lang->changelog['9.2'][] = 'testsuite-import';
 $lang->changelog['9.2'][] = 'testsuite-showImport';
 $lang->changelog['9.5'][] = 'bug-batchActivate';
+
+$lang->changelog['9.6'][] = 'custom-setPublic';
+$lang->changelog['9.6'][] = 'datatable-setGlobal';
+$lang->changelog['9.6'][] = 'product-export';
+$lang->changelog['9.6'][] = 'project-export';
+$lang->changelog['9.6'][] = 'project-storyKanban';
+$lang->changelog['9.6'][] = 'project-storySort';
 
 global $config;
 if($config->global->flow != 'full')

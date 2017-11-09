@@ -10,7 +10,6 @@ $config->task->activate = new stdclass();
 
 $config->task->create->requiredFields      = 'name,type';
 $config->task->edit->requiredFields        = $config->task->create->requiredFields;
-$config->task->start->requiredFields       = 'estimate';
 $config->task->finish->requiredFields      = 'consumed';
 $config->task->activate->requiredFields    = 'left';
 
@@ -58,7 +57,7 @@ if($config->global->flow == 'onlyTask')
 }
 
 $config->task->datatable = new stdclass();
-$config->task->datatable->defaultField = array('id', 'pri', 'name', 'status', 'deadline', 'openedDate', 'assignedTo', 'finishedBy', 'finishedDate', 'estimate', 'consumed', 'left', 'story', 'actions');
+$config->task->datatable->defaultField = array('id', 'pri', 'name', 'status', 'deadline', 'openedDate', 'assignedTo', 'finishedBy', 'estimate', 'consumed', 'left', 'actions');
 
 $config->task->datatable->fieldList['id']['title']    = 'idAB';
 $config->task->datatable->fieldList['id']['fixed']    = 'left';
@@ -181,7 +180,22 @@ $config->task->datatable->fieldList['story']['fixed']    = 'no';
 $config->task->datatable->fieldList['story']['width']    = '80';
 $config->task->datatable->fieldList['story']['required'] = 'no';
 
+$config->task->datatable->fieldList['mailto']['title']    = 'mailto';
+$config->task->datatable->fieldList['mailto']['fixed']    = 'no';
+$config->task->datatable->fieldList['mailto']['width']    = '100';
+$config->task->datatable->fieldList['mailto']['required'] = 'no';
+
+$config->task->datatable->fieldList['lastEditedBy']['title']    = 'lastEditedBy';
+$config->task->datatable->fieldList['lastEditedBy']['fixed']    = 'no';
+$config->task->datatable->fieldList['lastEditedBy']['width']    = '80';
+$config->task->datatable->fieldList['lastEditedBy']['required'] = 'no';
+
+$config->task->datatable->fieldList['lastEditedDate']['title']    = 'lastEditedDate';
+$config->task->datatable->fieldList['lastEditedDate']['fixed']    = 'no';
+$config->task->datatable->fieldList['lastEditedDate']['width']    = '90';
+$config->task->datatable->fieldList['lastEditedDate']['required'] = 'no';
+
 $config->task->datatable->fieldList['actions']['title']    = 'actions';
 $config->task->datatable->fieldList['actions']['fixed']    = 'right';
-$config->task->datatable->fieldList['actions']['width']    = '140';
+$config->task->datatable->fieldList['actions']['width']    = '180';
 $config->task->datatable->fieldList['actions']['required'] = 'yes';

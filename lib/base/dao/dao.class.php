@@ -173,6 +173,15 @@ class baseDAO
     static public $cache = array();
 
     /**
+     * 缓存过期时间 
+     * The cache timeout.
+     * 
+     * @var float 
+     * @access public
+     */
+    public $cacheTimeout = 60;
+
+    /**
      * 构造方法。
      * The construct method.
      *
@@ -686,7 +695,6 @@ class baseDAO
         {
             $sql = $this->processSQL();
         }
-        $key = md5($sql);
 
         try
         {
@@ -695,21 +703,10 @@ class baseDAO
 
             if($this->slaveDBH and $method == 'select')
             {
-                if(isset(dao::$cache[$key])) return dao::$cache[$key];
-                $result = $this->slaveDBH->query($sql);
-                dao::$cache[$key] = $result;
-                return $result;
+                return $this->slaveDBH->query($sql);
             }
             else
             {
-                if($this->method == 'select')
-                {
-                    if(isset(dao::$cache[$key])) return dao::$cache[$key];
-                    $result = $this->slaveDBH->query($sql);
-                    dao::$cache[$key] = $result;
-                    return $result;
-                }
-
                 return $this->dbh->query($sql);
             }
         }
@@ -769,6 +766,7 @@ class baseDAO
 
         try
         {
+            if($this->table) unset(dao::$cache[$this->table]);
             $this->reset();
             return $this->dbh->exec($sql);
         }
@@ -791,10 +789,30 @@ class baseDAO
      */
     public function fetch($field = '')
     {
-        if(empty($field)) return $this->query()->fetch();
+        $sql   = $this->processSQL();
+        $table = $this->table;
+        $key   = md5($sql);
+        if(isset(dao::$cache[$table]['fetch'][$key]) and dao::$cache[$table]['fetch'][$key]['time'] <= time() - $this->cacheTimeout)
+        {
+            if(empty($field)) return $this->getRow(dao::$cache[$table]['fetch'][$key]['data']);
+
+            $result = dao::$cache[$table]['fetch'][$key]['data'];
+            return $result ? $result->$field : '';
+        }
+
+        if(empty($field))
+        {
+            $data = $this->query()->fetch();
+            dao::$cache[$table]['fetch'][$key]['data'] = $data;
+            dao::$cache[$table]['fetch'][$key]['time'] = time();
+            return $this->getRow($data);
+        }
+
         $this->setFields($field);
         $result = $this->query()->fetch(PDO::FETCH_OBJ);
-        if($result) return $result->$field;
+        dao::$cache[$table]['fetch'][$key]['data'] = $result;
+        dao::$cache[$table]['fetch'][$key]['time'] = time();
+        return $result ? $result->$field : '';
     }
 
     /**
@@ -808,10 +826,36 @@ class baseDAO
      */
     public function fetchAll($keyField = '')
     {
+        $sql   = $this->processSQL();
+        $table = $this->table;
+        $key   = md5($sql . $keyField);
+        if(isset(dao::$cache[$table]['fetchAll'][$key]['data']) and dao::$cache[$table]['fetchAll'][$key]['time'] <= time() - $this->cacheTimeout)
+        {
+            $rows   = dao::$cache[$table]['fetchAll'][$key]['data'];
+            $result = array();
+            foreach($rows as $i => $row) $result[$i] = $this->getRow($row);
+            return $result;
+        }
+
         $stmt = $this->query();
-        if(empty($keyField)) return $stmt->fetchAll();
+        if(empty($keyField))
+        {
+            $rows   = $stmt->fetchAll();
+            $result = array();
+            dao::$cache[$table]['fetchAll'][$key]['data'] = $rows;
+            dao::$cache[$table]['fetchAll'][$key]['time'] = time();
+            foreach($rows as $i => $row) $result[$i] = $this->getRow($row);
+            return $result;
+        }
+
         $rows = array();
-        while($row = $stmt->fetch()) $rows[$row->$keyField] = $row;
+        while($row = $stmt->fetch())
+        {
+            dao::$cache[$table]['fetchAll'][$key]['data'][$row->$keyField] = $row;
+            $rows[$row->$keyField] = $this->getRow($row);
+        }
+        if(isset(dao::$cache[$table]['fetchAll'][$key]['data'])) dao::$cache[$table]['fetchAll'][$key]['time'] = time();
+            
         return $rows;
     }
 
@@ -826,12 +870,28 @@ class baseDAO
      */
     public function fetchGroup($groupField, $keyField = '')
     {
+        $sql   = $this->processSQL();
+        $table = $this->table;
+        $key   = md5($sql . $groupField . $keyField);
+        if(isset(dao::$cache[$table]['fetchGroup'][$key]) and dao::$cache[$table]['fetchGroup'][$key]['time'] <= time() - $this->cacheTimeout)
+        {
+            $result    = array();
+            $groupRows = dao::$cache[$table]['fetchGroup'][$key]['data'];
+            foreach($groupRows as $groupField => $rows)
+            {
+                foreach($rows as $keyField => $row) $result[$groupField][$keyField] = $this->getRow($row);
+            }
+            return $result;
+        }
+
         $stmt = $this->query();
         $rows = array();
         while($row = $stmt->fetch())
         {
-            empty($keyField) ?  $rows[$row->$groupField][] = $row : $rows[$row->$groupField][$row->$keyField] = $row;
+            empty($keyField) ?  $rows[$row->$groupField][] = $row : $rows[$row->$groupField][$row->$keyField] = $this->getRow($row);
         }
+        dao::$cache[$table]['fetchGroup'][$key]['data'] = $rows;
+        dao::$cache[$table]['fetchGroup'][$key]['time'] = time();
         return $rows;
     }
 
@@ -852,6 +912,11 @@ class baseDAO
         $keyField   = trim($keyField, '`');
         $valueField = trim($valueField, '`');
 
+        $sql   = $this->processSQL();
+        $table = $this->table;
+        $key   = md5($sql . $keyField . $valueField);
+        if(isset(dao::$cache[$table]["fetchPairs"][$key]) and dao::$cache[$table]["fetchPairs"][$key]['time'] <= time() - $this->cacheTimeout) return dao::$cache[$table]['fetchPairs'][$key]['data'];
+
         $pairs = array();
         $ready = false;
         $stmt  = $this->query();
@@ -870,6 +935,9 @@ class baseDAO
 
             $pairs[$row[$keyField]] = $row[$valueField];
         }
+
+        dao::$cache[$table]['fetchPairs'][$key]['data'] = $pairs;
+        dao::$cache[$table]['fetchPairs'][$key]['time'] = time();
         return $pairs;
     }
 
@@ -883,6 +951,20 @@ class baseDAO
     public function lastInsertID()
     {
         return $this->dbh->lastInsertID();
+    }
+
+    /**
+     * 重新生成数据。
+     * Get row by data. 
+     * 
+     * @param  array/object    $data 
+     * @access public
+     * @return array/object
+     */
+    public function getRow($data)
+    {
+        if(!is_object($data)) return $data;
+        return json_decode(json_encode($data));
     }
 
     //-------------------- 魔术方法(Magic methods) --------------------//

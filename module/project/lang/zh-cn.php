@@ -38,7 +38,7 @@ $lang->project->totalEstimate = '总预计';
 $lang->project->totalConsumed = '总消耗';
 $lang->project->totalLeft     = '总剩余';
 $lang->project->Left          = '剩余';
-$lang->project->progess       = '进度';
+$lang->project->progress      = '进度';
 $lang->project->hours         = '预计 %s 消耗 %s 剩余 %s';
 $lang->project->viewBug       = '查看bug';
 $lang->project->noProduct     = "无{$lang->productCommon}{$lang->projectCommon}";
@@ -52,12 +52,15 @@ $lang->project->other         = '其他：';
 $lang->project->deleted       = '已删除';
 $lang->project->delayed       = '已延期';
 $lang->project->product       = $lang->project->products;
+$lang->project->readjustTime  = '调整项目起止时间';
+$lang->project->readjustTask  = '顺延任务的起止时间';
 
 $lang->project->start    = '开始';
 $lang->project->activate = '激活';
 $lang->project->putoff   = '延期';
 $lang->project->suspend  = '挂起';
 $lang->project->close    = '关闭';
+$lang->project->export   = '导出';
 
 $lang->project->typeList['sprint']    = "短期$lang->projectCommon";
 $lang->project->typeList['waterfall'] = "长期$lang->projectCommon";
@@ -132,6 +135,8 @@ $lang->project->importTask       = '转入任务';
 $lang->project->importBug        = '导入Bug';
 $lang->project->updateOrder      = '排序';
 $lang->project->tree             = '树状图';
+$lang->project->storyKanban      = '需求看板';
+$lang->project->storySort        = '需求排序';
 
 /* 分组浏览。*/
 $lang->project->allTasks             = '所有';
@@ -235,16 +240,27 @@ $lang->project->placeholder->totalLeft = '项目开始时的总预计工时';
 $lang->project->selectGroup = new stdclass();
 $lang->project->selectGroup->done = '(已结束)';
 
+$lang->project->orderList['order_asc']  = "需求排序正序";
+$lang->project->orderList['order_desc'] = "需求排序倒序";
 $lang->project->orderList['pri_asc']    = "需求优先级正序";
 $lang->project->orderList['pri_desc']   = "需求优先级倒序";
-$lang->project->orderList['id_asc']     = "需求ID正序";
-$lang->project->orderList['id_desc']    = "需求ID倒序";
 $lang->project->orderList['stage_asc']  = "需求阶段正序";
 $lang->project->orderList['stage_desc'] = "需求阶段倒序";
 
-$lang->project->kanban      = "看板";
-$lang->project->printKanban = "打印看板";
-$lang->project->bugList     = "Bug列表";
+$lang->project->kanban        = "看板";
+$lang->project->kanbanSetting = "看板设置";
+$lang->project->resetKanban   = "恢复默认";
+$lang->project->printKanban   = "打印看板";
+$lang->project->bugList       = "Bug列表";
+
+$lang->project->kanbanHideCols   = '看板隐藏已关闭、已取消列';
+$lang->project->kanbanShowOption = '显示折叠信息';
+$lang->project->kanbanColsColor  = '看板列自定义颜色';
+
+$lang->kanbanSetting = new stdclass();
+$lang->kanbanSetting->noticeReset     = '是否恢复看板默认设置？';
+$lang->kanbanSetting->optionList['0'] = '隐藏';
+$lang->kanbanSetting->optionList['1'] = '显示';
 
 $lang->printKanban = new stdclass();
 $lang->printKanban->common  = '看板打印';

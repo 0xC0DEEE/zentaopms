@@ -91,6 +91,11 @@ function showSearchMenu(objectType, objectID, module, method, extra)
     if(!$toggle.hasClass('show')) return;
     var $menu = $toggle.find('#dropMenu');
     var uuid = $.zui.uuid();
+    if(!$.cookie('ajax_quickJump'))
+    {
+        $.cookie('ajax_quickJump', 'on', {expires: config.cookieLife, path: config.webRoot});
+        $.get(createLink('score', 'ajax', "method=quickJump"));
+    }
     if(!$menu.data('initData'))
     {
         var remoteUrl = createLink(objectType, 'ajaxGetDropMenu', "objectID=" + objectID + "&module=" + module + "&method=" + method + "&extra=" + extra);
@@ -415,6 +420,7 @@ function setTreeBox()
 function selectLang(lang)
 {
     $.cookie('lang', lang, {expires:config.cookieLife, path:config.webRoot});
+    $.get(createLink('score', 'ajax', "method=selectLang"));
     location.href = removeAnchor(location.href);
 }
 
@@ -427,6 +433,7 @@ function selectLang(lang)
 function selectTheme(theme)
 {
     $.cookie('theme', theme, {expires:config.cookieLife, path:config.webRoot});
+    $.get(createLink('score', 'ajax', "method=selectTheme"));
     location.href = removeAnchor(location.href);
 }
 
@@ -547,7 +554,8 @@ function setFormAction(actionLink, hiddenwin, obj)
     $form.attr('action', actionLink);
 
     // Check safari for bug #1000, see http://pms.zentao.net/bug-view-1000.html
-    var isSafari = navigator.userAgent.indexOf('AppleWebKit') > -1;
+    var userAgent = navigator.userAgent;
+    var isSafari = userAgent.indexOf('AppleWebKit') > -1 && userAgent.indexOf('Safari') > -1 && userAgent.indexOf('Chrome') < 0;
     if(isSafari)
     {
         var idPreffix = 'checkbox-fix-' + $.zui.uuid();
@@ -697,6 +705,11 @@ function checkTable($table)
             var isChecked = $checkbox.prop('checked');
             if(!$this.is(':checkbox'))
             {
+                if(!$.cookie('ajax_dragSelected') && $checkbox.size() > 2)
+                {
+                    $.cookie('ajax_dragSelected', 'on', {expires: config.cookieLife, path: config.webRoot});
+                    $.get(createLink('score', 'ajax', "method=dragSelected"));
+                }
                 isChecked = checked === true || checked === false  ? checked : !isChecked;
                 $checkbox.prop('checked', isChecked);
             }
@@ -706,7 +719,6 @@ function checkTable($table)
             $tr.closest('.table').find('.rows-selector').prop('checked', false);
         }
     };
-
     var isSelectableTable = $table.hasClass('table-selectable');
 
     $table.selectable(
@@ -1737,11 +1749,21 @@ function initHotKey()
     {
         /* left, go to pre object. */
         var preLink = $('#pre').attr('href');
+        if(!$.cookie('ajax_lastNext'))
+        {
+            $.cookie('ajax_lastNext', 'on', {expires: config.cookieLife, path: config.webRoot});
+            $.get(createLink('score', 'ajax', "method=lastNext"));
+        }
         if(preLink) location.href = preLink;
     }).bind('keydown', 'right', function()
     {
         /* right, go to next object. */
         var nextLink = $('#next').attr('href');
+        if(!$.cookie('ajax_lastNext'))
+        {
+            $.cookie('ajax_lastNext', 'on', {expires: config.cookieLife, path: config.webRoot});
+            $.get(createLink('score', 'ajax', "method=lastNext"));
+        }
         if(nextLink) location.href = nextLink;
     });
 }

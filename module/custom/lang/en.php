@@ -1,18 +1,22 @@
 <?php
-$lang->custom->common    = 'Custom';
-$lang->custom->index     = 'Home';
-$lang->custom->set       = 'Customize';
-$lang->custom->restore   = 'Reset to Default';
-$lang->custom->key       = 'Key';
-$lang->custom->value     = 'Value';
-$lang->custom->flow      = 'Process';
-$lang->custom->working   = 'Working';
-$lang->custom->select    = 'Select Process';
-$lang->custom->branch    = 'Multi Branch';
-$lang->custom->owner     = 'Owner';
-$lang->custom->module    = 'Module';
-$lang->custom->section   = 'Section';
-$lang->custom->lang      = 'Language';
+$lang->custom->common     = 'Custom';
+$lang->custom->index      = 'Home';
+$lang->custom->set        = 'Customize';
+$lang->custom->restore    = 'Reset to Default';
+$lang->custom->key        = 'Key';
+$lang->custom->value      = 'Value';
+$lang->custom->flow       = 'Process';
+$lang->custom->working    = 'Working';
+$lang->custom->select     = 'Select Process';
+$lang->custom->branch     = 'Multi Branch';
+$lang->custom->owner      = 'Owner';
+$lang->custom->module     = 'Module';
+$lang->custom->section    = 'Section';
+$lang->custom->lang       = 'Language';
+$lang->custom->setPublic  = 'Set Public';
+$lang->custom->required   = 'Required';
+$lang->custom->score      = 'Score';
+$lang->custom->scoreReset = 'Reset Score';
 
 $lang->custom->object['story']    = 'Story';
 $lang->custom->object['task']     = 'Task';
@@ -119,3 +123,10 @@ $lang->custom->workingList['onlyTask']  = 'Task';
 
 $lang->custom->menuTip  = 'Click to show/hide navigation bar. Drag to swtich display order.';
 $lang->custom->saveFail = 'Failed to save!';
+
+$lang->custom->scoreList[0] = 'Off';
+$lang->custom->scoreList[1] = 'On';
+
+$lang->custom->moduleName['product']     = $lang->productCommon;
+$lang->custom->moduleName['productplan'] = 'Plan';
+$lang->custom->moduleName['project']     = $lang->projectCommon;

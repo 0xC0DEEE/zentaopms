@@ -12,11 +12,15 @@
 ?>
 <?php include '../../common/view/header.html.php';?>
 <?php include '../../common/view/tablesorter.html.php';?>
+<?php include '../../common/view/sortable.html.php';?>
 <?php js::set('moduleID', ($type == 'byModule' ? $param : 0));?>
 <?php js::set('productID', ($type == 'byProduct' ? $param : 0));?>
 <?php js::set('confirmUnlinkStory', $lang->project->confirmUnlinkStory)?>
-<div id='titlebar'>
-  <div class='heading'><?php echo html::icon($lang->icons['story']);?> <?php echo $lang->project->story;?></div>
+<div id='featurebar'>
+  <ul class='nav'>
+    <li class='active'><?php if(common::hasPriv('project', 'story')) echo html::a($this->createLink('project', 'story', "project=$project->id"), $lang->project->story);?></li>
+    <li><?php if(common::hasPriv('project', 'storykanban')) echo html::a($this->createLink('project', 'storykanban', "project=$project->id"), $lang->project->kanban);?></li>
+  </ul>
   <div class='actions'>
     <div class='btn-group'>
     <?php 
@@ -54,11 +58,15 @@
 <div class='main'>
   <script>setTreeBox();</script>
   <form method='post' id='projectStoryForm'>
+      <?php $canOrder = common::hasPriv('project', 'storySort');?>
     <table class='table tablesorter table-condensed table-fixed table-selectable' id='storyList'>
       <thead>
         <tr class='colhead'>
         <?php $vars = "projectID={$project->id}&orderBy=%s&type=$type&param=$param&recTotal={$pager->recTotal}&recPerPage={$pager->recPerPage}"; ?>
           <th class='w-id  {sorter:false}'>    <?php common::printOrderLink('id',         $orderBy, $vars, $lang->idAB);?></th>
+          <?php if($canOrder):?>
+          <th class='w-50px {sorter:false}'>    <?php common::printOrderLink('order',      $orderBy, $vars, $lang->project->updateOrder);?></th>
+          <?php endif;?>
           <th class='w-pri {sorter:false}'>    <?php common::printOrderLink('pri',        $orderBy, $vars, $lang->priAB);?></th>
           <th class='{sorter:false}'>          <?php common::printOrderLink('title',      $orderBy, $vars, $lang->story->title);?></th>
           <th class='w-user {sorter:false}'>   <?php common::printOrderLink('openedBy',   $orderBy, $vars, $lang->openedByAB);?></th>
@@ -72,7 +80,7 @@
           <th class='w-110px {sorter:false}'>  <?php echo $lang->actions;?></th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id='storyTableList' class='sortable'>
         <?php
         $totalEstimate = 0;
         $canBatchEdit  = common::hasPriv('story', 'batchEdit');
@@ -83,13 +91,16 @@
         $storyLink      = $this->createLink('story', 'view', "storyID=$story->id&version=$story->version&from=project&param=$project->id");
         $totalEstimate += $story->estimate;
         ?>
-        <tr class='text-center' id="story<?php echo $story->id?>">
+        <tr class='text-center' id="story<?php echo $story->id?>"  data-id='<?php echo $story->id ?>' data-order='<?php echo $story->order ?>'>
           <td class='cell-id'>
             <?php if($canBatchEdit or $canBatchClose):?>
             <input type='checkbox' name='storyIDList[<?php echo $story->id;?>]' value='<?php echo $story->id;?>' /> 
             <?php endif;?>
             <?php echo html::a($storyLink, sprintf('%03d', $story->id));?>
           </td>
+          <?php if($canOrder):?>
+          <td class='sort-handler'><i class='icon-move'></i></td>
+          <?php endif;?>
           <td><span class='<?php echo 'pri' . zget($lang->story->priList, $story->pri, $story->pri)?>'><?php echo zget($lang->story->priList, $story->pri, $story->pri);?></span></td>
           <td class='text-left' title="<?php echo $story->title?>">
             <?php if(isset($branchGroups[$story->product][$story->branch])) echo "<span class='label label-info label-badge'>" . $branchGroups[$story->product][$story->branch] . '</span>';?>
@@ -151,7 +162,7 @@
       </tbody>
       <tfoot>
         <tr>
-          <td colspan='12'>
+          <td colspan='<?php echo $canOrder ? 13 : 12;?>'>
             <div class='table-actions clearfix'>
             <?php
             $storyInfo = sprintf($lang->project->productStories, inlink('linkStory', "project={$project->id}"));
@@ -192,4 +203,6 @@
     </table>
   </form>
 </div>
+<?php js::set('projectID', $project->id);?>
+<?php js::set('orderBy', $orderBy)?>
 <?php include '../../common/view/footer.html.php';?>

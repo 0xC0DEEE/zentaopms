@@ -281,15 +281,13 @@ class customModel extends model
         global $app, $lang, $config;
         $allMenu = $module == 'main' ? $lang->menu : (isset($lang->$module->menu) ? $lang->$module->menu : $lang->my->menu);
         if($module == 'product' and isset($allMenu->branch)) $allMenu->branch = str_replace('@branch@', $lang->custom->branch, $allMenu->branch);
-
         if($module != 'main' and isset($lang->menugroup->$module)) $module = $lang->menugroup->$module;
         $flowModule = $config->global->flow . '_' . $module;
         $customMenu = isset($config->customMenu->$flowModule) ? $config->customMenu->$flowModule : array();
         if(commonModel::isTutorialMode() && $module === 'main')$customMenu = 'my,product,project,qa,company';
         if(!empty($customMenu) && is_string($customMenu) && substr($customMenu, 0, 1) === '[') $customMenu = json_decode($customMenu);
-
+        if($module == 'my' && empty($config->global->score)) unset($allMenu->score);
         $menu = self::setMenuByConfig($allMenu, $customMenu, $module);
-
         return $menu;
     }
 
@@ -359,18 +357,102 @@ class customModel extends model
         $account    = $this->app->user->account;
         $settingKey = '';
 
+        $setPublic = $this->post->setPublic;
         if(!is_string($menu)) $menu = json_encode($menu);
 
         $flow = $this->config->global->flow;
         if(empty($method))
         {
-            $settingKey = "$account.common.customMenu.{$flow}_{$module}";
+            $settingKey = "common.customMenu.{$flow}_{$module}";
         }
         else
         {
-            $settingKey = "$account.common.customMenu.{$flow}_feature_{$module}_{$method}";
+            $settingKey = "common.customMenu.{$flow}_feature_{$module}_{$method}";
         }
 
-        $this->loadModel('setting')->setItem($settingKey, $menu);
+        $this->loadModel('setting')->setItem($account . '.' . $settingKey, $menu);
+        if($setPublic) $this->setting->setItem('system.' . $settingKey, $menu);
+
+        $this->loadModel('score')->create('ajax', 'customMenu');
+    }
+
+    /**
+     * Get required fields by config.
+     * 
+     * @param  object    $moduleConfig 
+     * @access public
+     * @return array
+     */
+    public function getRequiredFields($moduleConfig)
+    {
+        $requiredFields = array();
+        foreach($moduleConfig as $method => $subConfig)
+        {
+            if(is_object($subConfig) and isset($subConfig->requiredFields)) $requiredFields[$method] = trim(str_replace(' ', '', $subConfig->requiredFields));
+        }
+
+        return $requiredFields;
+    }
+
+    /**
+     * Get module fields.
+     * 
+     * @param  string $moduleName 
+     * @param  string $method 
+     * @access public
+     * @return array
+     */
+    public function getDBFields($moduleName, $method = '')
+    {
+        $fields       = array();
+        $moduleLang   = $this->lang->$moduleName;
+        $customFields = $this->config->custom->fieldList;
+        if(isset($customFields[$moduleName]))
+        {
+            $fieldList = isset($customFields[$moduleName][$method]) ? $customFields[$moduleName][$method] : $customFields[$moduleName];
+            if(!is_string($fieldList)) return $fields;
+
+            foreach(explode(',', $fieldList) as $fieldName)
+            {
+                if($fieldName == 'comment') $fields[$fieldName] = $this->lang->comment;
+                if(isset($moduleLang->$fieldName) and is_string($moduleLang->$fieldName)) $fields[$fieldName] = $moduleLang->$fieldName;
+            }
+        }
+        return $fields;
+    }
+
+    /**
+     * Save required fields.
+     * 
+     * @param  int    $moduleName 
+     * @access public
+     * @return void
+     */
+    public function saveRequiredFields($moduleName)
+    {
+        if(isset($this->config->system->$moduleName))   unset($this->config->system->$moduleName);
+        if(isset($this->config->personal->$moduleName)) unset($this->config->personal->$moduleName);
+
+        $this->loadModel($moduleName);
+        $systemFields = $this->getRequiredFields($this->config->$moduleName);
+
+        $data = fixer::input('post')->get();
+        $requiredFields = array();
+        foreach($data->requiredFields as $method => $fields)
+        {
+            $method      = strtolower($method);
+            $systemField = $this->config->$moduleName->$method->requiredFields;
+
+            $fields = join(',', $fields);
+            foreach(explode(',', $systemField) as $field)
+            {
+                $field = trim($field);
+                if(strpos(",$fields,", ",$field,") === false) $fields .= ",$field";
+            }
+
+            $requiredFields[$method]['requiredFields'] = $fields;
+        }
+
+        $this->loadModel('setting')->setItems("system.{$moduleName}", $requiredFields);
     }
 }

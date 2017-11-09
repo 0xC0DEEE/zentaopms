@@ -169,12 +169,15 @@ class task extends control
     /**
      * Batch create task.
      *
-     * @param  int    $projectID
-     * @param  int    $storyID
+     * @param int $projectID
+     * @param int $storyID
+     * @param int $iframe
+     * @param int $taskID
+     *
      * @access public
-     * @return void
+     * @return mixed
      */
-    public function batchCreate($projectID = 0, $storyID = 0, $iframe = 0)
+    public function batchCreate($projectID = 0, $storyID = 0, $iframe = 0, $taskID = 0)
     {
         $project   = $this->project->getById($projectID); 
         $taskLink  = $this->createLink('project', 'browse', "projectID=$projectID&tab=task");
@@ -213,6 +216,7 @@ class task extends control
         $this->view->project    = $project;
         $this->view->stories    = $stories;
         $this->view->modules    = $modules;
+        $this->view->parent     = $taskID;
         $this->view->storyID    = $storyID;
         $this->view->story      = $this->story->getByID($storyID);
         $this->view->storyTasks = $this->task->getStoryTaskCounts(array_keys($stories), $projectID);
@@ -229,7 +233,8 @@ class task extends control
      */
     public function commonAction($taskID)
     {
-        $this->view->task    = $this->loadModel('task')->getByID($taskID);
+        $task=$this->loadModel('task')->getByID($taskID);
+        $this->view->task    = $task;
         $this->view->project = $this->project->getById($this->view->task->project);
         $this->view->members = $this->project->getTeamMemberPairs($this->view->project->id ,'nodeleted');
         $this->view->actions = $this->loadModel('action')->getList('task', $taskID);
@@ -339,10 +344,12 @@ class task extends control
                     }
                 }
             }
+            $this->loadModel('score')->create('ajax', 'batchOther');
             die(js::locate($this->session->taskList, 'parent'));
         }
 
         $taskIDList = $this->post->taskIDList ? $this->post->taskIDList : die(js::locate($this->session->taskList, 'parent'));
+        $taskIDList = array_unique($taskIDList);
 
         /* The tasks of project. */
         if($projectID)
@@ -426,10 +433,20 @@ class task extends control
             die(js::locate($this->createLink('task', 'view', "taskID=$taskID"), 'parent'));
         }
 
+        $task = $this->task->getByID($taskID);
+
+        $members = $this->project->getTeamMemberPairs($projectID, 'nodeleted');
+        /* Compute next assignedTo. */
+        if(!empty($task->team))
+        {
+            $task->assignedTo = $this->task->getNextUser(array_keys($task->team), $task->assignedTo);
+            $members = $this->task->getMemberPairs($task);
+        }
+
         $this->view->title      = $this->view->project->name . $this->lang->colon . $this->lang->task->assign;
         $this->view->position[] = $this->lang->task->assign;
-
-        $this->view->users = $this->project->getTeamMemberPairs($projectID, 'nodeleted');
+        $this->view->task       = $task;
+        $this->view->users      = $members;
         $this->display();
     }
 
@@ -445,6 +462,7 @@ class task extends control
         if($this->post->taskIDList)
         {
             $taskIDList = $this->post->taskIDList;
+            $taskIDList = array_unique($taskIDList);
             unset($_POST['taskIDList']);
             $allChanges = $this->task->batchChangeModule($taskIDList, $moduleID);
             if(dao::isError()) die(js::error(dao::getError()));
@@ -455,6 +473,7 @@ class task extends control
                 $this->action->logHistory($actionID, $changes);
                 $this->task->sendmail($taskID, $actionID);
             }
+            $this->loadModel('score')->create('ajax', 'batchOther');
         }
         die(js::reload('parent'));
     }
@@ -471,8 +490,10 @@ class task extends control
         if(!empty($_POST))
         {
             $taskIDList = $this->post->taskIDList;
+            $taskIDList = array_unique($taskIDList);
             unset($_POST['taskIDList']);
             if(!is_array($taskIDList)) die(js::locate($this->createLink('project', 'task', "projectID=$project"), 'parent'));
+            $taskIDList = array_unique($taskIDList);
             foreach($taskIDList as $taskID)
             {
                 $this->loadModel('action');
@@ -482,7 +503,8 @@ class task extends control
                 $this->action->logHistory($actionID, $changes);
                 $this->task->sendmail($taskID, $actionID);
             }
-            die(js::locate($this->createLink('project', 'task', "projectID=$project"), 'parent'));
+            $this->loadModel('score')->create('ajax', 'batchOther');
+            die(js::reload('parent'));
         }
     }
 
@@ -516,6 +538,8 @@ class task extends control
             $task->storyVerify   = empty($story) ? '' : $this->loadModel('file')->setImgSize($story->verify);
             $task->storyFiles    = $this->loadModel('file')->getByObject('story', $task->story);
         }
+
+        if($task->team) $this->lang->task->assign = $this->lang->task->transmit;
 
         /* Update action. */
         if($task->assignedTo == $this->app->user->account) $this->loadModel('action')->read('task', $taskID);
@@ -751,10 +775,20 @@ class task extends control
             die(js::locate($this->createLink('task', 'view', "taskID=$taskID"), 'parent'));
         }
 
+        $task    = $this->view->task;
+        $members = $this->loadModel('user')->getPairs('noletter');
+
+        if(!empty($task->team))
+        {
+            $task->openedBy   = $this->task->getNextUser(array_keys($task->team), $task->assignedTo);
+            $members          = $this->task->getMemberPairs($task);
+            $task->myConsumed = $this->dao->select('consumed')->from(TABLE_TEAM)->where('task')->eq($taskID)->andWhere('account')->eq($task->assignedTo)->fetch('consumed');
+        }
+
         $this->view->title      = $this->view->project->name . $this->lang->colon .$this->lang->task->finish;
         $this->view->position[] = $this->lang->task->finish;
         $this->view->date       = strftime("%Y-%m-%d %X", strtotime('now'));
-        $this->view->users      = $this->loadModel('user')->getPairs('noletter');
+        $this->view->members    = $members;
        
         $this->display();
     }
@@ -872,6 +906,7 @@ class task extends control
         if($this->post->taskIDList)
         {
             $taskIDList = $this->post->taskIDList;
+            $taskIDList = array_unique($taskIDList);
             unset($_POST['taskIDList']);
             unset($_POST['assignedTo']);
             $this->loadModel('action');
@@ -905,6 +940,7 @@ class task extends control
         if($this->post->taskIDList or $skipTaskIdList)
         {
             $taskIDList = $this->post->taskIDList;
+            $taskIDList = array_unique($taskIDList);
             if($skipTaskIdList) $taskIDList = $skipTaskIdList;
             unset($_POST['taskIDList']);
             unset($_POST['assignedTo']);
@@ -936,6 +972,7 @@ class task extends control
                 $cancelURL  = $this->server->HTTP_REFERER;
                 die(js::confirm(sprintf($this->lang->task->error->skipClose, $skipTasks), $confirmURL, $cancelURL, 'self', 'parent'));
             }
+            $this->loadModel('score')->create('ajax', 'batchOther');
         }
         die(js::reload('parent'));
     }
@@ -1152,6 +1189,9 @@ class task extends control
                     ->beginIF($this->post->exportType == 'selected')->andWhere('t1.id')->in($this->cookie->checkedItem)->fi()
                     ->orderBy($orderBy)->fetchAll('id');
 
+                $taskList = array_keys($tasks);
+                if(!empty($taskList)) $children = $this->dao->select('*')->from(TABLE_TASK)->where('parent')->in($taskList)->fetchGroup('parent');
+
                 foreach($tasks as $key => $task)
                 {
                     /* Compute task progess. */
@@ -1171,6 +1211,12 @@ class task extends control
                     $task->progess .= '%';
 
                     $tasks[$key] = $task;
+
+                    if(isset($children[$task->id])) foreach($children[$task->id] as $child)
+                    {
+                        $child->name       = $taskLang->childrenAB . ') ' . $child->name;
+                        $tasks[$child->id] = $child;
+                    }
                 }
             }
             else

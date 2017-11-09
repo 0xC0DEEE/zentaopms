@@ -38,7 +38,7 @@ $lang->project->totalEstimate = 'Est.';
 $lang->project->totalConsumed = 'Consumed';
 $lang->project->totalLeft     = 'Total Remained';
 $lang->project->Left          = 'Remained';
-$lang->project->progess       = 'Progess';
+$lang->project->progress      = 'Progress';
 $lang->project->hours         = 'Estimate %s, Consumed %s, Remained %s';
 $lang->project->viewBug       = 'Bugs';
 $lang->project->noProduct     = "No {$lang->productCommon}";
@@ -52,12 +52,15 @@ $lang->project->other         = 'Other:';
 $lang->project->deleted       = 'Deleted';
 $lang->project->delayed       = 'Delayed';
 $lang->project->product       = $lang->project->products;
+$lang->project->readjustTime  = 'Readjust project time for begin and end';
+$lang->project->readjustTask  = 'Readjust task start date and deadline';
 
 $lang->project->start    = 'Start';
 $lang->project->activate = 'Activate';
 $lang->project->putoff   = 'Deplay';
 $lang->project->suspend  = 'Suspend';
 $lang->project->close    = 'Close';
+$lang->project->export   = 'Export';
 
 $lang->project->typeList['sprint']    = 'Sprint';
 $lang->project->typeList['waterfall'] = 'Waterfall';
@@ -132,6 +135,8 @@ $lang->project->importTask       = 'Import Task';
 $lang->project->importBug        = 'Import Bug';
 $lang->project->updateOrder      = 'Order';
 $lang->project->tree             = 'Tree';
+$lang->project->storyKanban      = 'Story Kanban';
+$lang->project->storySort        = 'Story Sort';
 
 /* 分组浏览。*/
 $lang->project->allTasks             = 'All';
@@ -235,16 +240,27 @@ $lang->project->placeholder->totalLeft = 'Total man-hour remained when start Pro
 $lang->project->selectGroup = new stdclass();
 $lang->project->selectGroup->done = '(Done)';
 
+$lang->project->orderList['order_asc']  = "Order Asc";
+$lang->project->orderList['order_desc'] = "Order Desc";
 $lang->project->orderList['pri_asc']    = "Priority Asc";
 $lang->project->orderList['pri_desc']   = "Priority Desc";
-$lang->project->orderList['id_asc']     = "ID Asc";
-$lang->project->orderList['id_desc']    = "ID Desc";
 $lang->project->orderList['stage_asc']  = "Stage Asc";
 $lang->project->orderList['stage_desc'] = "Stage Desc";
 
-$lang->project->kanban      = "Kanban";
-$lang->project->printKanban = "Print Kanban";
-$lang->project->bugList     = "Bugs";
+$lang->project->kanban        = "Kanban";
+$lang->project->kanbanSetting = "Kanban Setting";
+$lang->project->resetKanban   = "Reset Setting";
+$lang->project->printKanban   = "Print Kanban";
+$lang->project->bugList       = "Bugs";
+
+$lang->project->kanbanHideCols   = 'Kanban hidden has been closed and canceled columns';
+$lang->project->kanbanShowOption = 'Display folding information';
+$lang->project->kanbanColsColor  = 'Custom color for Kanban column';
+
+$lang->kanbanSetting = new stdclass();
+$lang->kanbanSetting->noticeReset     = 'Do you want to restore the Kanban default settings?';
+$lang->kanbanSetting->optionList['0'] = 'Hidden';
+$lang->kanbanSetting->optionList['1'] = 'Show';
 
 $lang->printKanban = new stdclass();
 $lang->printKanban->common  = 'Print Kanban';

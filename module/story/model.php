@@ -40,7 +40,7 @@ class storyModel extends model
         $story->projects = $this->dao->select('t1.project, t2.name, t2.status')->from(TABLE_PROJECTSTORY)->alias('t1')
             ->leftJoin(TABLE_PROJECT)->alias('t2')->on('t1.project = t2.id')
             ->where('t1.story')->eq($storyID)
-            ->orderBy('t1.project DESC')
+            ->orderBy('t1.`order` DESC')
             ->fetchAll('project');
         $story->tasks  = $this->dao->select('id, name, assignedTo, project, status, consumed, `left`')->from(TABLE_TASK)->where('story')->eq($storyID)->andWhere('deleted')->eq(0)->orderBy('id DESC')->fetchGroup('project');
         $story->stages = $this->dao->select('*')->from(TABLE_STORYSTAGE)->where('story')->eq($storyID)->fetchPairs('branch', 'stage');
@@ -186,11 +186,13 @@ class storyModel extends model
 
             if($projectID != 0 and $story->status != 'draft') 
             {
+                $lastOrder = (int)$this->dao->select('*')->from(TABLE_PROJECTSTORY)->where('project')->eq($projectID)->orderBy('order_desc')->limit(1)->fetch('order');
                 $this->dao->insert(TABLE_PROJECTSTORY)
                     ->set('project')->eq($projectID)
                     ->set('product')->eq($this->post->product)
                     ->set('story')->eq($storyID)
                     ->set('version')->eq(1)
+                    ->set('order')->eq($lastOrder + 1)
                     ->exec();
             }
 
@@ -228,6 +230,7 @@ class storyModel extends model
                 }
             }
             $this->setStage($storyID);
+            $this->loadModel('score')->create('story', 'create',$storyID);
             return array('status' => 'created', 'id' => $storyID);
         }
         return false;
@@ -342,6 +345,7 @@ class storyModel extends model
                 $this->dao->insert(TABLE_STORYSPEC)->data($specData)->exec();
 
                 $actionID = $this->action->create('story', $storyID, 'Opened', '');
+                $this->loadModel('score')->create('story', 'create',$storyID);
                 $mails[$i] = new stdclass();
                 $mails[$i]->storyID  = $storyID;
                 $mails[$i]->actionID = $actionID;
@@ -357,7 +361,7 @@ class storyModel extends model
             if(is_dir($realPath)) $classFile->removeDir($realPath);
             unset($_SESSION['storyImagesFile']);
         }
-
+        $this->loadModel('score')->create('ajax', 'batchCreate');
         return $mails;
     }
 
@@ -380,6 +384,12 @@ class storyModel extends model
         if(!empty($_POST['lastEditedDate']) and $oldStory->lastEditedDate != $this->post->lastEditedDate)
         {
             dao::$errors[] = $this->lang->error->editedByOther;
+            return false;
+        }
+
+        if(strpos($this->config->story->change->requiredFields, 'comment') !== false and !$this->post->comment)
+        {
+            dao::$errors[] = sprintf($this->lang->error->notempty, $this->lang->comment);
             return false;
         }
 
@@ -493,6 +503,7 @@ class storyModel extends model
                     $this->dao->replace(TABLE_PROJECTPRODUCT)->data($data)->exec();
                 }
             }
+            if($story->closedReason == 'done') $this->loadModel('score')->create('story', 'close');
             return common::createChanges($oldStory, $story);
         }
     }
@@ -599,6 +610,7 @@ class storyModel extends model
 
                 if(!dao::isError()) 
                 {
+                    if($story->closedReason == 'done') $this->loadModel('score')->create('story', 'close');
                     $allChanges[$storyID] = common::createChanges($oldStory, $story);
                 }
                 else
@@ -607,7 +619,7 @@ class storyModel extends model
                 }
             }
         }
-
+        $this->loadModel('score')->create('ajax', 'batchEdit');
         return $allChanges;
     }
 
@@ -622,6 +634,12 @@ class storyModel extends model
     {
         if($this->post->result == false)   die(js::alert($this->lang->story->mustChooseResult));
         if($this->post->result == 'revert' and $this->post->preVersion == false) die(js::alert($this->lang->story->mustChoosePreVersion));
+
+        if(strpos($this->config->story->review->requiredFields, 'comment') !== false and !$this->post->comment)
+        {
+            dao::$errors[] = sprintf($this->lang->error->notempty, $this->lang->comment);
+            return false;
+        }
 
         $oldStory = $this->dao->findById($storyID)->from(TABLE_STORY)->fetch();
         $now      = helper::now();
@@ -762,6 +780,12 @@ class storyModel extends model
      */
     public function close($storyID)
     {
+        if(strpos($this->config->story->close->requiredFields, 'comment') !== false and !$this->post->comment)
+        {
+            dao::$errors[] = sprintf($this->lang->error->notempty, $this->lang->comment);
+            return false;
+        }
+
         $oldStory = $this->dao->findById($storyID)->from(TABLE_STORY)->fetch();
         $now      = helper::now();
         $story = fixer::input('post')
@@ -778,11 +802,13 @@ class storyModel extends model
             ->setIF($this->post->closedReason != 'done', 'plan', 0)
             ->remove('comment')
             ->get();
+
         $this->dao->update(TABLE_STORY)->data($story)
             ->autoCheck()
             ->batchCheck($this->config->story->close->requiredFields, 'notempty')
             ->checkIF($story->closedReason == 'duplicate',  'duplicateStory', 'notempty')
             ->where('id')->eq($storyID)->exec();
+        if($this->post->closedReason == 'done') $this->loadModel('score')->create('story', 'close', $storyID);
         return common::createChanges($oldStory, $story);
     }
 
@@ -846,6 +872,7 @@ class storyModel extends model
             {
                 die(js::error('story#' . $storyID . dao::getError(true)));
             }
+            if($story->stage == 'released') $this->loadModel('score')->create('story', 'close', $storyID);
         }
 
         return $allChanges;
@@ -969,6 +996,9 @@ class storyModel extends model
             $story->lastEditedBy   = $this->app->user->account;
             $story->lastEditedDate = $now;
             $story->stage          = $stage;
+
+            /* When stage is verified then only change to released. */
+            if($oldStory->stage == 'verified' and $stage->stage != 'released') $stage->stage = 'verified';
 
             $this->dao->update(TABLE_STORY)->data($story)->autoCheck()->where('id')->eq((int)$storyID)->exec();
             if(!dao::isError()) $allChanges[$storyID] = common::createChanges($oldStory, $story);
@@ -1568,7 +1598,7 @@ class storyModel extends model
      * @access public
      * @return array
      */
-    public function getProjectStories($projectID = 0, $orderBy = 'pri_asc,id_desc', $type = 'byModule', $param = 0, $pager = null)
+    public function getProjectStories($projectID = 0, $orderBy = 't1.`order`_desc', $type = 'byModule', $param = 0, $pager = null)
     {
         if(defined('TUTORIAL')) return $this->loadModel('tutorial')->getProjectStories();
 
@@ -1661,6 +1691,7 @@ class storyModel extends model
             ->beginIF($productID)->andWhere('t2.product')->eq((int)$productID)->fi()
             ->beginIF($branch)->andWhere('t2.branch')->in("0,$branch")->fi()
             ->beginIF($moduleIdList)->andWhere('t2.module')->in($moduleIdList)->fi()
+            ->orderBy('t1.`order` desc')
             ->fetchAll();
         if(!$stories) return array();
         return $this->formatStories($stories, $type);
@@ -2175,6 +2206,21 @@ class storyModel extends model
     }
 
     /**
+     * Get kanban group data. 
+     * 
+     * @param  array    $stories 
+     * @access public
+     * @return array
+     */
+    public function getKanbanGroupData($stories)
+    {
+        $storyGroup = array();
+        foreach($stories as $story) $storyGroup[$story->stage][$story->id] = $story;
+
+        return $storyGroup;
+    }
+
+    /**
      * Adjust the action clickable.
      * 
      * @param  object $story 
@@ -2247,8 +2293,9 @@ class storyModel extends model
      * @access public
      * @return void
      */
-    public function printCell($col, $story, $users, $branches, $storyStages, $modulePairs = array(), $storyTasks, $storyBugs, $storyCases)
+    public function printCell($col, $story, $users, $branches, $storyStages, $modulePairs = array(), $storyTasks = array(), $storyBugs = array(), $storyCases = array(), $mode = 'datatable')
     {
+        $canView   = common::hasPriv('story', 'view');
         $storyLink = helper::createLink('story', 'view', "storyID=$story->id");
         $account   = $this->app->user->account;
         $id        = $col->id;
@@ -2256,7 +2303,8 @@ class storyModel extends model
         {
             $class = '';
             if($id == 'status') $class .= ' story-' . $story->status;
-            if($id == 'title') $class .= ' text-left';
+            if($id == 'title')  $class .= ' text-left';
+            if($id == 'id')     $class .= ' cell-id';
             if($id == 'assignedTo' && $story->assignedTo == $account) $class .= ' red';
 
             $title = '';
@@ -2264,10 +2312,11 @@ class storyModel extends model
             if($id == 'plan')  $title = $story->planTitle;
 
             echo "<td class='" . $class . "' title='$title'>";
-            switch ($id)
+            switch($id)
             {
             case 'id':
-                echo html::a($storyLink, sprintf('%03d', $story->id));
+                if($mode == 'table') echo "<input type='checkbox' name='storyIDList[{$story->id}]' value='{$story->id}' /> ";
+                echo $canView ? html::a($storyLink, sprintf('%03d', $story->id)) : sprintf('%03d', $story->id);
                 break;
             case 'pri':
                 echo "<span class='pri" . zget($this->lang->story->priList, $story->pri, $story->pri) . "'>";
@@ -2277,13 +2326,16 @@ class storyModel extends model
             case 'title':
                 if($story->branch) echo "<span class='label label-info label-badge'>{$branches[$story->branch]}</span> ";
                 if($modulePairs and $story->module) echo "<span class='label label-info label-badge'>{$modulePairs[$story->module]}</span> ";
-                echo html::a($storyLink, $story->title, null, "style='color: $story->color'");
+                echo $canView ? html::a($storyLink, $story->title, '', "style='color: $story->color'") : "<span style='color: $story->color'>{$story->title}</span>";
                 break;
             case 'plan':
                 echo $story->planTitle;
                 break;
             case 'branch':
                 echo $branches[$story->branch];
+                break;
+            case 'keywords':
+                echo $story->keywords;
                 break;
             case 'source':
                 echo zget($this->lang->story->sourceList, $story->source, $story->source);
@@ -2347,6 +2399,24 @@ class storyModel extends model
                 break;
             case 'closedReason':
                 echo zget($this->lang->story->reasonList, $story->closedReason, $story->closedReason);
+                break;
+            case 'lastEditedBy':
+                echo zget($users, $story->lastEditedBy, $story->lastEditedBy);
+                break;
+            case 'lastEditedDate':
+                echo substr($story->lastEditedDate, 5, 11);
+                break;
+            case 'mailto':
+                $mailto = explode(',', $story->mailto);
+                foreach($mailto as $account)
+                {
+                    $account = trim($account);
+                    if(empty($account)) continue;
+                    echo zget($users, $account) . ' &nbsp;';
+                }
+                break;
+            case 'version':
+                echo $story->version;
                 break;
             case 'actions':
                 $vars = "story={$story->id}";

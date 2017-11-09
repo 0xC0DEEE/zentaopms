@@ -107,6 +107,7 @@ class testcaseModel extends model
             $caseID = $this->dao->lastInsertID();
             $this->loadModel('file')->saveUpload('testcase', $caseID);
             $parentStepID = 0;
+            $this->loadModel('score')->create('testcase', 'create', $caseID);
             foreach($this->post->steps as $stepID => $stepDesc)
             {
                 if(empty($stepDesc)) continue;
@@ -209,6 +210,7 @@ class testcaseModel extends model
                 }
 
                 $caseID   = $this->dao->lastInsertID();
+                $this->loadModel('score')->create('testcase', 'create', $caseID);
                 $actionID = $this->loadModel('action')->create('case', $caseID, 'Opened');
             }
             else
@@ -223,6 +225,7 @@ class testcaseModel extends model
                 unset($cases->keywords[$i]);
             }
         }
+        $this->loadModel('score')->create('ajax', 'batchCreate');
     }
 
     /**
@@ -1232,8 +1235,9 @@ class testcaseModel extends model
      * @access public
      * @return void
      */
-    public function printCell($col, $case, $users, $branches, $modulePairs = array(), $browseType = '')
+    public function printCell($col, $case, $users, $branches, $modulePairs = array(), $browseType = '', $mode = 'datatable')
     {
+        $canView  = common::hasPriv('testcase', 'view');
         $caseLink = helper::createLink('testcase', 'view', "caseID=$case->id&version=$case->version");
         $account  = $this->app->user->account;
         $id = $col->id;
@@ -1241,14 +1245,16 @@ class testcaseModel extends model
         {
             $class = '';
             if($id == 'status') $class .= $case->status;
-            if($id == 'title') $class .= ' text-left';
+            if($id == 'title')  $class .= ' text-left';
+            if($id == 'id')     $class .= ' cell-id';
             if($id == 'lastRunResult') $class .= $case->lastRunResult;
 
             echo "<td class='" . $class . "'" . ($id=='title' ? " title='{$case->title}'":'') . ">";
-            switch ($id)
+            switch($id)
             {
             case 'id':
-                echo html::a($caseLink, sprintf('%03d', $case->id));
+                if($mode == 'table') echo "<input type='checkbox' name='caseIDList[]'  value='{$case->id}'/> ";
+                echo $canView ? html::a($caseLink, sprintf('%03d', $case->id)) : sprintf('%03d', $case->id);
                 break;
             case 'pri':
                 echo "<span class='pri" . zget($this->lang->testcase->priList, $case->pri, $case->pri) . "'>";
@@ -1258,7 +1264,7 @@ class testcaseModel extends model
             case 'title':
                 if($case->branch) echo "<span class='label label-info label-badge'>{$branches[$case->branch]}</span> ";
                 if($modulePairs and $case->module) echo "<span class='label label-info label-badge'>{$modulePairs[$case->module]}</span> ";
-                echo html::a($caseLink, $case->title, null, "style='color: $case->color'");
+                echo $canView ? html::a($caseLink, $case->title, null, "style='color: $case->color'") : "<span style='color: $case->color'>$case->title</span>";
                 break;
             case 'branch':
                 echo $branches[$case->branch];
@@ -1286,11 +1292,32 @@ class testcaseModel extends model
                 if(empty($stories)) $stories = $this->dao->select('id,title')->from(TABLE_STORY)->where('deleted')->eq('0')->andWhere('product')->eq($case->product)->fetchPairs('id', 'title');
                 if($case->story and isset($stories[$case->story])) echo html::a(helper::createLink('story', 'view', "storyID=$case->story"), $stories[$case->story]);
                 break;
+            case 'precondition':
+                echo $case->precondition;
+                break;
+            case 'keywords':
+                echo $case->keywords;
+                break;
+            case 'version':
+                echo $case->version;
+                break;
             case 'openedBy':
                 echo zget($users, $case->openedBy, $case->openedBy);
                 break;
             case 'openedDate':
                 echo substr($case->openedDate, 5, 11);
+                break;
+            case 'reviewedBy':
+                echo zget($users, $case->reviewedBy, $case->reviewedBy);
+                break;
+            case 'reviewedDate':
+                echo substr($case->reviewedDate, 5, 11);
+                break;
+            case 'lastEditedBy':
+                echo zget($users, $case->lastEditedBy, $case->lastEditedBy);
+                break;
+            case 'lastEditedDate':
+                echo substr($case->lastEditedDate, 5, 11);
                 break;
             case 'lastRunner':
                 echo zget($users, $case->lastRunner, $case->lastRunner);
