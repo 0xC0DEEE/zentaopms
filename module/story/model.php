@@ -230,7 +230,7 @@ class storyModel extends model
                 }
             }
             $this->setStage($storyID);
-            $this->loadModel('score')->create('story', 'create',$storyID);
+            if(!dao::isError()) $this->loadModel('score')->create('story', 'create',$storyID);
             return array('status' => 'created', 'id' => $storyID);
         }
         return false;
@@ -326,8 +326,11 @@ class storyModel extends model
                     {
                         $file['addedBy']    = $this->app->user->account;    
                         $file['addedDate']  = $now;     
+                        $file['objectType'] = 'story';
+                        $file['objectID']   = $storyID;
                         if(in_array($file['extension'], $this->config->file->imageExtensions))
                         {
+                            $file['extra'] = 'editor';
                             $this->dao->insert(TABLE_FILE)->data($file)->exec();
 
                             $fileID = $this->dao->lastInsertID();
@@ -335,8 +338,6 @@ class storyModel extends model
                         }
                         else
                         {
-                            $file['objectType'] = 'story';
-                            $file['objectID']   = $storyID;
                             $this->dao->insert(TABLE_FILE)->data($file)->exec();
                         }
                     }
@@ -345,7 +346,7 @@ class storyModel extends model
                 $this->dao->insert(TABLE_STORYSPEC)->data($specData)->exec();
 
                 $actionID = $this->action->create('story', $storyID, 'Opened', '');
-                $this->loadModel('score')->create('story', 'create',$storyID);
+                if(!dao::isError()) $this->loadModel('score')->create('story', 'create',$storyID);
                 $mails[$i] = new stdclass();
                 $mails[$i]->storyID  = $storyID;
                 $mails[$i]->actionID = $actionID;
@@ -361,7 +362,7 @@ class storyModel extends model
             if(is_dir($realPath)) $classFile->removeDir($realPath);
             unset($_SESSION['storyImagesFile']);
         }
-        $this->loadModel('score')->create('ajax', 'batchCreate');
+        if(!dao::isError())  $this->loadModel('score')->create('ajax', 'batchCreate');
         return $mails;
     }
 
@@ -465,8 +466,8 @@ class storyModel extends model
             ->add('lastEditedDate', $now)
             ->setDefault('status', $oldStory->status)
             ->setDefault('product', $oldStory->product)
-            ->setDefault('plan', 0)
-            ->setDefault('branch', 0)
+            ->setDefault('plan', $oldStory->plan)
+            ->setDefault('branch', $oldStory->branch)
             ->setIF($this->post->assignedTo   != $oldStory->assignedTo, 'assignedDate', $now)
             ->setIF($this->post->closedBy     != false and $oldStory->closedDate == '', 'closedDate', $now)
             ->setIF($this->post->closedReason != false and $oldStory->closedDate == '', 'closedDate', $now)
@@ -503,7 +504,7 @@ class storyModel extends model
                     $this->dao->replace(TABLE_PROJECTPRODUCT)->data($data)->exec();
                 }
             }
-            if($story->closedReason == 'done') $this->loadModel('score')->create('story', 'close');
+            if(isset($story->closedReason) and $story->closedReason == 'done') $this->loadModel('score')->create('story', 'close');
             return common::createChanges($oldStory, $story);
         }
     }
@@ -619,7 +620,7 @@ class storyModel extends model
                 }
             }
         }
-        $this->loadModel('score')->create('ajax', 'batchEdit');
+        if(!dao::isError()) $this->loadModel('score')->create('ajax', 'batchEdit');
         return $allChanges;
     }
 
@@ -808,7 +809,7 @@ class storyModel extends model
             ->batchCheck($this->config->story->close->requiredFields, 'notempty')
             ->checkIF($story->closedReason == 'duplicate',  'duplicateStory', 'notempty')
             ->where('id')->eq($storyID)->exec();
-        if($this->post->closedReason == 'done') $this->loadModel('score')->create('story', 'close', $storyID);
+        if(!dao::isError() && $this->post->closedReason == 'done') $this->loadModel('score')->create('story', 'close', $storyID);
         return common::createChanges($oldStory, $story);
     }
 
@@ -872,7 +873,7 @@ class storyModel extends model
             {
                 die(js::error('story#' . $storyID . dao::getError(true)));
             }
-            if($story->stage == 'released') $this->loadModel('score')->create('story', 'close', $storyID);
+            if(!dao::isError() && $story->stage == 'released') $this->loadModel('score')->create('story', 'close', $storyID);
         }
 
         return $allChanges;

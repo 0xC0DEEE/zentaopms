@@ -35,8 +35,8 @@ $lang->task->reportChart        = "Report Chart";
 $lang->task->fromBug            = 'From Bug';
 $lang->task->case               = 'Related Case';
 $lang->task->confirmStoryChange = "Confirm Story Change";
-$lang->task->progess            = 'Progess';
-$lang->task->progessTips        = 'Consumed/(Consumed+Remained)';
+$lang->task->progress           = 'Progress';
+$lang->task->progressTips       = 'Consumed/(Consumed+Remained)';
 $lang->task->copy               = 'Duplicate a Task';
 
 $lang->task->common            = 'Task';
@@ -96,11 +96,10 @@ $lang->task->colorTag          = 'Color Tag';
 $lang->task->files             = 'Files';
 $lang->task->hasConsumed       = 'Consumed';
 $lang->task->multiple          = 'Multiple Tasks';
-$lang->task->multipleAB        = 'Multi';
-$lang->task->multipleABP       = 'Multiple';
+$lang->task->multipleAB        = 'M';
 $lang->task->team              = 'Team';
-$lang->task->transmit          = 'Transfer';
-$lang->task->transmitTo        = 'Transfer To';
+$lang->task->transfer          = 'Transfer';
+$lang->task->transferTo        = 'Transfer To';
 $lang->task->children          = 'Child';
 $lang->task->childrenAB        = 'Child';
 $lang->task->parent            = 'Parent Task';
@@ -176,9 +175,8 @@ $lang->task->error->left             = 'Please enter "Remained"';
 $lang->task->error->work             = '"Remark" must be less than %d characteres.';
 $lang->task->error->skipClose        = 'Task: %s is not“Done”or “Cancelled”. Confirm to close them?';
 $lang->task->error->consumed         = 'Task: %s man-hour must be more than 0. Ignore changes to this Task.';
-$lang->task->error->isFinish         = 'Has completed the task, do not repeat the submission.';
 
-/* 统计报表。*/
+/* Report. */
 $lang->task->report = new stdclass();
 $lang->task->report->common = 'Report';
 $lang->task->report->select = 'Select the type of Task Report';

@@ -35,8 +35,8 @@ $lang->task->reportChart        = "報表統計";
 $lang->task->fromBug            = '來源Bug';
 $lang->task->case               = '相關用例';
 $lang->task->confirmStoryChange = "確認需求變動";
-$lang->task->progess            = '進度';
-$lang->task->progessTips        = '已消耗/(已消耗+剩餘)';
+$lang->task->progress           = '進度';
+$lang->task->progressTips       = '已消耗/(已消耗+剩餘)';
 $lang->task->copy               = '複製任務';
 
 $lang->task->common           = '任務';
@@ -96,11 +96,10 @@ $lang->task->colorTag         = '顏色標籤';
 $lang->task->files            = '附件';
 $lang->task->hasConsumed      = '已消耗';
 $lang->task->multiple         = '多人任務';
-$lang->task->multipleAB       = '多';
-$lang->task->multipleABP      = '多人';
+$lang->task->multipleAB       = '多人';
 $lang->task->team             = '團隊';
-$lang->task->transmit         = '轉交';
-$lang->task->transmitTo       = '轉交給';
+$lang->task->transfer         = '轉交';
+$lang->task->transferTo       = '轉交給';
 $lang->task->children         = '子任務';
 $lang->task->childrenAB       = '子';
 $lang->task->parent           = '父任務';
@@ -176,9 +175,8 @@ $lang->task->error->left             = '請填寫"剩餘"';
 $lang->task->error->work             = '"備註"必須小於%d個字元';
 $lang->task->error->skipClose        = '任務：%s 不是“已完成”或“已取消”狀態，確定要關閉嗎？';
 $lang->task->error->consumed         = '任務：%s工時不能小於0，忽略該任務工時的改動';
-$lang->task->error->isFinish         = '已完成任務，勿重複提交';
 
-/* 統計報表。*/
+/* Report. */
 $lang->task->report         = new stdclass();
 $lang->task->report->common = '報表';
 $lang->task->report->select = '請選擇報表類型';

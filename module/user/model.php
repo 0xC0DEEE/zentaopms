@@ -408,9 +408,9 @@ class userModel extends model
             }
         }
         if(!empty($user->password) and $user->account == $this->app->user->account) $this->app->user->password = $user->password;
-        $this->loadModel('score')->create('user','editProfile');
         if(!dao::isError())
         {
+            $this->loadModel('score')->create('user', 'editProfile');
             $this->loadModel('mail');
             if($this->config->mail->mta == 'sendcloud' and $user->email != $oldUser->email)
             {
@@ -538,7 +538,10 @@ class userModel extends model
         $this->dao->update(TABLE_USER)->data($user)->autoCheck()->where('id')->eq((int)$userID)->exec();
         $this->app->user->password       = $user->password;
         $this->app->user->modifyPassword = false;
-        $this->loadModel('score')->create('user','changePassword',$this->computePasswordStrength($this->post->password1));
+        if(!dao::isError())
+        {
+            $this->loadModel('score')->create('user', 'changePassword', $this->computePasswordStrength($this->post->password1));
+        }
     }
 
     /**
@@ -627,9 +630,10 @@ class userModel extends model
         {
             $ip   = $this->server->remote_addr;
             $last = $this->server->request_time;
-            $user->lastTime = $user->last;
-            $user->last     = date(DT_DATETIME1, $last);
-            $user->admin    = strpos($this->app->company->admins, ",{$user->account},") !== false;
+
+            $user->lastTime       = $user->last;
+            $user->last           = date(DT_DATETIME1, $last);
+            $user->admin          = strpos($this->app->company->admins, ",{$user->account},") !== false;
             $user->modifyPassword = ($user->visits == 0 and !empty($this->config->safe->modifyPasswordFirstLogin));
             if($user->modifyPassword) $user->modifyPasswordReason = 'modifyPasswordFirstLogin';
             if(!$user->modifyPassword and !empty($this->config->safe->changeWeak))

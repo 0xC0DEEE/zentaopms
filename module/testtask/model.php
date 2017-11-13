@@ -99,17 +99,17 @@ class testtaskModel extends model
      */
     public function getProductTasks($productID, $branch = 0, $orderBy = 'id_desc', $pager = null, $scopeAndStatus = array(), $beginTime = 0, $endTime = 0)
     {
-        $projects = $this->loadModel('project')->getPairs();
+        if($scopeAndStatus[0] == 'all') $products = $this->loadModel('product')->getPairs();
         if($this->config->global->flow == 'onlyTest')
         {
-            return $this->dao->select("t1.*, t2.name AS productName, t4.name AS buildName, t4.branch AS branch")
+            return $this->dao->select("t1.*, t2.name AS productName,t4.name AS buildName, t4.branch AS branch")
                 ->from(TABLE_TESTTASK)->alias('t1')
                 ->leftJoin(TABLE_PRODUCT)->alias('t2')->on('t1.product = t2.id')
                 ->leftJoin(TABLE_BUILD)->alias('t4')->on('t1.build = t4.id')
                 ->where('t1.deleted')->eq(0)
-                ->andWhere('t2.id')->in(array_keys($projects))
                 ->beginIF($scopeAndStatus[0] == 'local')->andWhere('t1.product')->eq((int)$productID)->fi()
-                ->beginIF($scopeAndStatus[1] == 'totalStatus')->andWhere('t1.status')->in(array('blocked','doing','wait','done'))->fi()
+                ->beginIF($scopeAndStatus[0] == 'all')->andWhere('t1.product')->in(array_keys($products))->fi()
+                ->beginIF($scopeAndStatus[1] == 'totalStatus')->andWhere('t1.status')->in(('blocked,doing,wait,done'))->fi()
                 ->beginIF($scopeAndStatus[1] != 'totalStatus')->andWhere('t1.status')->eq($scopeAndStatus[1])->fi()
                 ->beginIF($branch)->andWhere("t4.branch = '$branch'")->fi()
                 ->orderBy($orderBy)
@@ -118,17 +118,20 @@ class testtaskModel extends model
         }
         else
         {
-            $testTask = $this->dao->select("t1.*, t2.name AS productName, t3.name AS projectName, t4.name AS buildName, if(t4.name != '', t4.branch, t5.branch) AS branch")
+            $projects = $this->loadModel('project')->getPairs();
+            return $this->dao->select("t1.*, t2.name AS productName, t3.name AS projectName, t4.name AS buildName, if(t4.name != '', t4.branch, t5.branch) AS branch")
                 ->from(TABLE_TESTTASK)->alias('t1')
                 ->leftJoin(TABLE_PRODUCT)->alias('t2')->on('t1.product = t2.id')
                 ->leftJoin(TABLE_PROJECT)->alias('t3')->on('t1.project = t3.id')
                 ->leftJoin(TABLE_BUILD)->alias('t4')->on('t1.build = t4.id')
                 ->leftJoin(TABLE_PROJECTPRODUCT)->alias('t5')->on('t1.project = t5.project')
+
                 ->where('t1.deleted')->eq(0)
-                ->beginIF($scopeAndStatus[0] == 'local')->andWhere('t1.product')->eq((int)$productID)->fi()
                 ->andWhere('t5.product = t1.product')
                 ->andWhere('t3.id')->in(array_keys($projects))
-                ->beginIF($scopeAndStatus[1] == 'totalStatus')->andWhere('t1.status')->in(array('blocked','doing','wait','done'))->fi()
+                ->beginIF($scopeAndStatus[0] == 'local')->andWhere('t1.product')->eq((int)$productID)->fi()
+                ->beginIF($scopeAndStatus[0] == 'all')->andWhere('t1.product')->in(array_keys($products))->fi()
+                ->beginIF($scopeAndStatus[1] == 'totalStatus')->andWhere('t1.status')->in('blocked,doing,wait,done')->fi()
                 ->beginIF($scopeAndStatus[1] != 'totalStatus')->andWhere('t1.status')->eq($scopeAndStatus[1])->fi()
                 ->beginIF($branch)->andWhere("if(t4.branch, t4.branch, t5.branch) = '$branch'")->fi()
                 ->beginIF($beginTime)->andWhere('t1.begin')->ge($beginTime)->fi()
@@ -136,9 +139,6 @@ class testtaskModel extends model
                 ->orderBy($orderBy)
                 ->page($pager)
                 ->fetchAll('id');
-
-            $projectTeam = $this->dao->select('project, account')->from(TABLE_TEAM)->where('account')->eq($this->app->user->account)->fetchAll('project');
-            return $testTask;
         }
     }
 
@@ -896,7 +896,7 @@ class testtaskModel extends model
             }
         }
 
-        $this->loadModel('score')->create('testtask', 'runCase', $runID);
+        if(!dao::isError()) $this->loadModel('score')->create('testtask', 'runCase', $runID);
 
         return $caseResult;
     }
@@ -1158,26 +1158,26 @@ class testtaskModel extends model
                 echo $run->version;
                 break;
             case 'openedBy':
-                $openedBy = zget($users, $run->openedBy, $run->openedBy);
+                $openedBy = zget($users, $run->openedBy);
                 echo substr($openedBy, strpos($openedBy, ':') + 1);
                 break;
             case 'openedDate':
                 echo substr($run->openedDate, 5, 11);
                 break;
             case 'reviewedBy':
-                echo zget($users, $run->reviewedBy, $run->reviewedBy);
+                echo zget($users, $run->reviewedBy);
                 break;
             case 'reviewedDate':
                 echo substr($run->reviewedDate, 5, 11);
                 break;
             case 'lastEditedBy':
-                echo zget($users, $run->lastEditedBy, $run->lastEditedBy);
+                echo zget($users, $run->lastEditedBy);
                 break;
             case 'lastEditedDate':
                 echo substr($run->lastEditedDate, 5, 11);
                 break;
             case 'lastRunner':
-                $lastRunner = zget($users, $run->lastRunner, $run->lastRunner);
+                $lastRunner = zget($users, $run->lastRunner);
                 echo substr($lastRunner, strpos($lastRunner, ':') + 1);
                 break;
             case 'lastRunDate':
@@ -1190,7 +1190,7 @@ class testtaskModel extends model
                 if($run->story and $run->storyTitle) echo html::a(helper::createLink('story', 'view', "storyID=$run->story"), $run->storyTitle);
                 break;
             case 'assignedTo':
-                $assignedTo = zget($users, $run->assignedTo, $run->assignedTo);
+                $assignedTo = zget($users, $run->assignedTo);
                 echo substr($assignedTo, strpos($assignedTo, ':') + 1);
                 break;
             case 'bugs':
@@ -1203,8 +1203,8 @@ class testtaskModel extends model
                 echo $run->stepNumber;
                 break;
             case 'actions':
-                common::printIcon('testtask', 'runCase',    "id=$run->id", $run, 'list', '', '', 'runCase iframe', false, "data-width='95%'");
-                common::printIcon('testtask', 'results',    "id=$run->id", $run, 'list', '', '', 'iframe', '', "data-width='90%'");
+                common::printIcon('testtask', 'runCase', "id=$run->id", $run, 'list', '', '', 'runCase iframe', false, "data-width='95%'");
+                common::printIcon('testtask', 'results', "id=$run->id", $run, 'list', '', '', 'iframe', '', "data-width='90%'");
 
                 if(common::hasPriv('testtask', 'unlinkCase', $run))
                 {

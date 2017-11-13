@@ -46,7 +46,7 @@ class todoModel extends model
         {
             $todoID = $this->dao->lastInsertID();
             $this->file->updateObjectID($this->post->uid, $todoID, 'todo');
-            $this->loadModel('score')->create('todo','create',$todoID);
+            $this->loadModel('score')->create('todo', 'create', $todoID);
             return $todoID;
         }
     }
@@ -93,8 +93,8 @@ class todoModel extends model
                     die(js::reload('parent'));
                 }
                 $todoID = $this->dao->lastInsertID();
-                $this->loadModel('action')->create('todo', $todoID, 'opened');
                 $this->loadModel('score')->create('todo', 'create', $todoID);
+                $this->loadModel('action')->create('todo', $todoID, 'opened');
             }
             else
             {

@@ -14,20 +14,24 @@
 <?php include '../../common/view/kindeditor.html.php';?>
 <?php include '../../common/view/datepicker.html.php';?>
 <?php js::set('confirmFinish', $lang->task->confirmFinish);?>
-<?php if(!empty($task->team) && array_keys($task->team)[0] != $this->app->user->account):?>
-  <div class="alert with-icon">
-    <i class="icon-info-sign"></i>
-    <div class="content">
-      <p><?php echo $lang->task->deniedNotice;?></p>
-    </div>
+<?php if(!empty($task->team)):?>
+<?php
+$team = array_keys($task->team);
+if($team[0] != $this->app->user->account):
+?>
+<div class="alert with-icon">
+  <i class="icon-info-sign"></i>
+  <div class="content">
+    <p><?php echo $lang->task->deniedNotice;?></p>
   </div>
-    <?php exit;?>
+</div>
 <?php endif;?>
+<?php else:?>
 <div id='titlebar'>
   <div class='heading'>
     <span class='prefix'><?php echo html::icon($lang->icons['task']);?> <strong><?php echo $task->id;?></strong></span>
     <strong><?php echo html::a($this->createLink('task', 'view', 'task=' . $task->id), $task->name, '_blank');?></strong>
-    <small class='text-muted'> <?php echo $lang->task->start;?> <?php echo html::icon($lang->icons['start']);?></small>
+    <small class='text-muted'><?php echo $lang->task->start;?> <?php echo html::icon($lang->icons['start']);?></small>
   </div>
 </div>
 <form class='form-condensed' method='post' target='hiddenwin' onsubmit='return checkLeft();'>
@@ -54,4 +58,5 @@
   </table>
 </form>
 <div class='main'><?php include '../../common/view/action.html.php';?></div>
+<?php endif;?>
 <?php include '../../common/view/footer.html.php';?>

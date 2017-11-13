@@ -291,7 +291,7 @@ class projectModel extends model
             $lib->main    = '1';
             $lib->acl     = $project->acl == 'open' ? 'open' : 'private';
             $this->dao->insert(TABLE_DOCLIB)->data($lib)->exec();
-            $this->loadModel('score')->create('project', 'create', $projectID);
+            if(!dao::isError()) $this->loadModel('score')->create('project', 'create', $projectID);
             return $projectID;
         } 
     }
@@ -578,8 +578,11 @@ class projectModel extends model
             ->autoCheck()
             ->where('id')->eq((int)$projectID)
             ->exec();
-        $this->loadModel('score')->create('project', 'close', $oldProject);
-        if(!dao::isError()) return common::createChanges($oldProject, $project);
+        if(!dao::isError())
+        {
+            $this->loadModel('score')->create('project', 'close', $oldProject);
+            return common::createChanges($oldProject, $project);
+        }
     }
 
     /**
@@ -795,9 +798,12 @@ class projectModel extends model
             $hour = (object)$emptyHour;
             foreach($projectTasks as $task)
             {
-                $hour->totalEstimate += $task->estimate;
-                $hour->totalConsumed += $task->consumed;
-                $hour->totalLeft     += ($task->status != 'cancel' and $task->closedReason != 'cancel') ? $task->left : 0;
+                if($task->status != 'cancel')
+                {
+                    $hour->totalEstimate += $task->estimate;
+                    $hour->totalConsumed += $task->consumed;
+                    $hour->totalLeft     += $task->left;
+                }
             }
             $hours[$projectID] = $hour;
         }
@@ -1570,10 +1576,10 @@ class projectModel extends model
             if(empty($account)) continue;
 
             $member = new stdclass();
-            $member->role        = $roles[$key];
-            $member->days        = $days[$key];
-            $member->hours       = $hours[$key];
-            $member->limitedUser = $limitedUser[$key];
+            $member->role    = $roles[$key];
+            $member->days    = $days[$key];
+            $member->hours   = $hours[$key];
+            $member->limited = $limited[$key];
 
             $mode = $modes[$key];
             if($mode == 'update')
@@ -1980,7 +1986,7 @@ class projectModel extends model
         if($this->app->user->admin) return true;
 
         /* Get all teams of all projects and group by projects, save it as static. */
-        $projects = $this->dao->select('project, limitedUser')->from(TABLE_TEAM)->where('account')->eq($this->app->user->account)->andWhere('limitedUser')->eq('yes')->orderBy('project asc')->fetchPairs('project', 'project');
+        $projects = $this->dao->select('project, limited')->from(TABLE_TEAM)->where('account')->eq($this->app->user->account)->andWhere('limited')->eq('yes')->orderBy('project asc')->fetchPairs('project', 'project');
         $_SESSION['limitedProjects'] = join(',', $projects);
     }
 

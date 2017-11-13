@@ -15,16 +15,16 @@
 <div id='titlebar'>
   <div class='heading'>
     <span class='prefix'><?php echo html::icon($lang->icons['task']);?> <strong><?php echo $task->id;?></strong></span>
-    <strong style='color: <?php echo $task->color; ?>'>
-        <?php if(!empty($task->parent)) echo '<span class="label">'.$this->lang->task->childrenAB.'</span> ';?>
-        <?php if(!empty($task->team)) echo '<span class="label">'.$this->lang->task->multipleAB.'</span> ';?>
-        <?php echo isset($task->parentName) ? $task->parentName . '/' : '';?><?php echo $task->name;?>
+    <strong style='color: <?php echo $task->color;?>'>
+      <?php if(!empty($task->parent)) echo '<span class="label">' . $this->lang->task->childrenAB . '</span> ';?>
+      <?php if(!empty($task->team)) echo '<span class="label">' . $this->lang->task->multipleAB . '</span> ';?>
+      <?php echo isset($task->parentName) ? $task->parentName . '/' : '';?><?php echo $task->name;?>
     </strong>
     <?php if($task->deleted):?>
     <span class='label label-danger'><?php echo $lang->task->deleted;?></span>
-    <?php endif; ?>
+    <?php endif;?>
     <?php if($task->fromBug != 0):?>
-    <small> <?php echo html::icon($lang->icons['bug']) . " {$lang->task->fromBug}$lang->colon$task->fromBug"; ?></small>
+    <small><?php echo html::icon($lang->icons['bug']) . " {$lang->task->fromBug}$lang->colon$task->fromBug";?></small>
     <?php endif;?>
   </div>
   <div class='actions'>
@@ -35,7 +35,7 @@
     {
         ob_start();
         echo "<div class='btn-group'>";
-        common::printIcon('task', 'assignTo', "projectID=$task->project&taskID=$task->id", $task, 'button', '', '', 'iframe', true, '', empty($task->team) ? $lang->task->assignTo : $lang->task->transmit);
+        common::printIcon('task', 'assignTo', "projectID=$task->project&taskID=$task->id", $task, 'button', '', '', 'iframe', true, '', empty($task->team) ? $lang->task->assignTo : $lang->task->transfer);
         common::printIcon('task', 'start',          "taskID=$task->id", $task, 'button', '', '', 'iframe', true);
         common::printIcon('task', 'restart',        "taskID=$task->id", $task, 'button', '', '', 'iframe', true);
         common::printIcon('task', 'recordEstimate', "taskID=$task->id", $task, 'button', '', '', 'iframe', true);
@@ -223,7 +223,7 @@
           </tr>
           <?php endif;?>
           <tr>
-            <th><?php echo empty($task->team) ? $lang->task->assignTo : $lang->task->transmitTo;?></th>
+            <th><?php echo empty($task->team) ? $lang->task->assignTo : $lang->task->transferTo;?></th>
             <td><?php echo $task->assignedTo ? $task->assignedToRealName . $lang->at . $task->assignedDate : '';?></td>
           </tr>
           <tr>
@@ -257,12 +257,12 @@
           </tr>
           </thead>
             <?php foreach($task->team as $member):?>
-              <tr class='text-center'>
-                <td class='text-left'><?php echo zget($users, $member->account)?></td>
-                <td><?php echo $member->estimate?></td>
-                <td><?php echo $member->consumed?></td>
-                <td><?php echo $member->left?></td>
-              </tr>
+            <tr class='text-center'>
+              <td class='text-left'><?php echo zget($users, $member->account)?></td>
+              <td><?php echo $member->estimate?></td>
+              <td><?php echo $member->consumed?></td>
+              <td><?php echo $member->left?></td>
+            </tr>
             <?php endforeach;?>
         </table>
       </fieldset>

@@ -17,7 +17,7 @@
   <div id="titlebar">
     <div class="heading">
       <strong><?php echo $lang->webhook->api;?></strong>
-      <small class="text-muted"> <?php echo $lang->webhook->create;?> <i class="icon-pencil"></i></small>
+      <small class="text-muted"> <?php echo $lang->webhook->create;?></small>
     </div>
   </div>
   <form id='webhookForm' method='post' class='ajaxForm'>
@@ -70,11 +70,11 @@
           <table class='table table-bordered'>
             <?php foreach($config->webhook->objectTypes as $objectType => $actions):?>
             <tr>
-              <td class='w-90px'>
+              <th class='w-80px'>
                 <label class='checkbox-inline'>
                   <input type='checkbox' class='objectType'><strong><?php echo $objectTypes[$objectType];?></strong>
                 </label>
-              </td>
+              </th>
               <td class='labelWidth'><?php echo html::checkbox("actions[$objectType]", $objectActions[$objectType]);?></td>
             </tr>
             <?php endforeach;?>
@@ -93,4 +93,4 @@
     </table>
   </form>
 </div>
-<?php include '../../common/view/footer.lite.html.php';?>
+<?php include '../../common/view/footer.html.php';?>
