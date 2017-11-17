@@ -176,6 +176,7 @@ $lang->my->menu->profile        = array('link' => '档案|my|profile', 'alias' =
 $lang->my->menu->changePassword = '密码|my|changepassword';
 $lang->my->menu->manageContacts = '联系人|my|managecontacts';
 $lang->my->menu->score          = '积分|my|score';
+$lang->my->menu->lctask      = '全局跟踪|my|lctask';  
 
 $lang->todo       = new stdclass();
 $lang->todo->menu = $lang->my->menu;

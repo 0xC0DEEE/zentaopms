@@ -563,4 +563,9 @@ class my extends control
         }
     }
 
+    public function lctask()
+    {
+        $this->display();
+    }
+
 }
