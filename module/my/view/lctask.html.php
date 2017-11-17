@@ -11,5 +11,5 @@
  */
 ?>
 <?php include '../../common/view/header.html.php';?>
-<iframe style="border:0px;width: 100%; height: 1000px" src="http://pm.hailiangtong.com:9876/"></iframe>
+<iframe style="border:0px;width: 100%; height: 1000px" src="https://preexform.hailiangtong.com/"></iframe>
 <?php include '../../common/view/footer.html.php';?>
